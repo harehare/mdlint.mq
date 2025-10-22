@@ -1,11 +1,11 @@
 # Markdown Linter - markdownlint Rules Implementation
 # This file implements linting rules based on markdownlint
+#
 # Reference: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.m
 # MD001: Header levels should only increment by one level at a time
 def md001(content):
-  let headings = do content | select(.h);
+  let headings = do content | .h | compact();
   | let levels = do map(headings, fn(h): attr(h, "level");) | filter(fn(level): level > 0;);
-  | let issues = []
   | foreach (i, range(1, len(levels) - 1, 1)):
       let current = levels[i]
       | let previous = levels[i - 1]
@@ -15,7 +15,7 @@ def md001(content):
             let heading_node = headings[i]
             | let heading_text = to_text(heading_node)
             | let expected_level = previous + 1
-            | let issue = {
+            | {
               rule: "MD001",
               name: "heading-increment",
               severity: "error",
@@ -24,16 +24,13 @@ def md001(content):
               line: i + 1,
               details: {previous_level: previous, current_level: current}
             }
-            | issues + issue
-          end
-        else:
-          issues
-    end
+        end
+    end | compact() | flatten()
 end
 
 # MD002: First header should be a top level header
 def md002(content):
-  let headings = do content | select(.h);
+  let headings = do content | .h | compact();
   | if (is_empty(headings)): []
     else:
       do
@@ -43,17 +40,17 @@ def md002(content):
             do
               let heading_text = to_text(first_heading)
               | [{
-  rule: "MD002",
-  name: "first-header-h1",
-  severity: "error",
-  message: s"First header should be h1 (found h${first_level})",
-  heading: heading_text,
-  line: 1,
-  details: {level: first_level}
-}]
-            end
+                rule: "MD002",
+                name: "first-header-h1",
+                severity: "error",
+                message: s"First header should be h1 (found h${first_level})",
+                heading: heading_text,
+                line: 1,
+                details: {level: first_level}
+              }]
+          end
           else: []
-      end
+    end
 end
 
 
@@ -159,10 +156,10 @@ end
 
 # MD024: Multiple headers with the same content
 def md024(content):
-  let headings = do content | select(.h);
+  let headings = do content | .h | compact();
   | let issues = []
   | let seen = {}
-  | foreach (i, range(0, len(headings), 1)):
+  | foreach (i, range(0, len(headings) - 1, 1)):
       let heading = headings[i]
       | let heading_text = to_text(heading)
       | if (contains(seen, heading_text)):
@@ -175,20 +172,21 @@ def md024(content):
             line: i + 1,
             details: {duplicate_text: heading_text}
           }
-        else: do
+        elif (!is_none(heading_text)): do
             let seen = set(seen, heading_text, true)
             | None
-          end
+        end
     end | compact()
 end
 
 # MD025: Multiple top level headers in the same document
 def md025(content):
-  let headings = do content | select(.h);
+  let headings = do content | .h | compact();
   | let h1_headings = filter(headings, fn(h): attr(h, "level") == 1;)
   | if (len(h1_headings) > 1):
-      foreach (i, range(1, len(h1_headings), 1)):
-        let heading_text = to_text(h1_headings[i]) | {
+      foreach (i, range(1, len(h1_headings) - 1, 1)):
+        let heading_text = to_text(h1_headings[i])
+        | {
           rule: "MD025",
           name: "single-h1",
           severity: "error",
@@ -203,15 +201,15 @@ end
 
 # MD026: Trailing punctuation in header
 def md026(content):
-  let headings = do content | select(.h);
+  let headings = do content | .h | compact();
   | let issues = []
-  | foreach (i, range(0, len(headings), 1)):
+  | foreach (i, range(0, len(headings) - 1, 1)):
       let heading = headings[i]
       | let heading_text = to_text(heading)
       | let last_char = slice(heading_text, len(heading_text) - 1, len(heading_text))
       | if (last_char == "." || last_char == "," || last_char == ":" || last_char == ";" || last_char == "!" || last_char == "?"):
           do
-            let issue = {
+            {
               rule: "MD026",
               name: "no-trailing-punctuation",
               severity: "warning",
@@ -220,11 +218,8 @@ def md026(content):
               line: i + 1,
               details: {punctuation: last_char}
             }
-            | issues + issue
-          end
-        else:
-          issues
-    end
+        end
+    end | compact() | flatten()
 end
 
 # MD027: Multiple spaces after blockquote symbol
@@ -265,20 +260,22 @@ end
 
 # MD033: Inline HTML
 def md033(content):
-  let html_nodes = do content | select(.html);
-  | let issues = []
-  | foreach (i, range(0, len(html_nodes), 1)):
-      let html_node = html_nodes[i]
-      | let html_text = to_text(html_node)
-      | let issue = {
-        rule: "MD033",
-        name: "no-inline-html",
-        severity: "warning",
-        message: s"Inline HTML found: ${html_text}",
-        line: i + 1,
-        details: {html: html_text}
-      }
-      | issues + issue
+  let html_nodes = do content | .html | compact();
+  | if (is_empty(html_nodes)): []
+    else: do
+        let issues = []
+        | foreach (i, range(0, len(html_nodes) - 1, 1)):
+            let html_node = html_nodes[i]
+            | let html_text = to_text(html_node)
+            | {
+              rule: "MD033",
+              name: "no-inline-html",
+              severity: "warning",
+              message: s"Inline HTML found: ${html_text}",
+              line: i + 1,
+              details: {html: html_text}
+            }
+          end
     end
 end
 
@@ -320,14 +317,14 @@ end
 
 # MD040: Fenced code blocks should have a language specified
 def md040(content):
-  let code_blocks = do content | select(.code_block);
+  let code_blocks = do content | .code | compact();
   | let issues = []
-  | foreach (i, range(0, len(code_blocks), 1)):
+  | foreach (i, range(0, len(code_blocks) - 1, 1)):
       let code_block = code_blocks[i]
       | let language = attr(code_block, "lang")
       | if (is_empty(language)):
           do
-            let issue = {
+            {
               rule: "MD040",
               name: "fenced-code-language",
               severity: "warning",
@@ -335,11 +332,8 @@ def md040(content):
               line: i + 1,
               details: {}
             }
-            | issues + issue
-          end
-        else:
-          issues
-    end
+        end
+    end | compact() | flatten()
 end
 
 # MD041: First line in file should be a top level header
@@ -376,15 +370,15 @@ end
 
 # Count issues by severity
 def count_by_severity(issues):
-  let errors = do filter(issues, fn(i): eq(get(i, "severity"), "error");) | len();
-  | let warnings = do filter(issues, fn(i): eq(get(i, "severity"), "warning");) | len();
-  | let info = do filter(issues, fn(i): eq(get(i, "severity"), "info");) | len();
+  let errors = do filter(issues, fn(i): i["severity"] == "error";) | len();
+  | let warnings = do filter(issues, fn(i): i["severity"] == "warning";) | len();
+  | let info = do filter(issues, fn(i): i["severity"] == "info";) | len();
   | {
-  "errors": errors,
-  "warnings": warnings,
-  "info": info,
-  "total": len(issues)
-}
+    "errors": errors,
+    "warnings": warnings,
+    "info": info,
+    "total": len(issues)
+  }
 end
 
 # Run all lint rules
@@ -429,16 +423,25 @@ def lint_all(content):
   | let md046_issues = md046(content)
   | let md047_issues = md047(content)
   | let all_issues = flatten([
-    md001_issues, md002_issues, md003_issues, md004_issues,
-    md005_issues, md006_issues, md007_issues, md009_issues,
-    md010_issues, md011_issues, md012_issues, md013_issues,
-    md014_issues, md018_issues, md019_issues, md020_issues,
-    md021_issues, md022_issues, md023_issues, md024_issues,
-    md025_issues, md026_issues, md027_issues, md028_issues,
-    md029_issues, md030_issues, md031_issues, md032_issues,
-    md033_issues, md034_issues, md035_issues, md036_issues,
-    md037_issues, md038_issues, md039_issues, md040_issues,
-    md041_issues, md046_issues, md047_issues
+    md001_issues, md002_issues,
+    md003_issues, md004_issues,
+    md005_issues, md006_issues,
+    md007_issues, md009_issues,
+    md010_issues, md011_issues,
+    md012_issues, md013_issues,
+    md014_issues, md018_issues,
+    md019_issues, md020_issues,
+    md021_issues, md022_issues,
+    md023_issues, md024_issues,
+    md025_issues, md026_issues,
+    md027_issues, md028_issues,
+    md029_issues, md030_issues,
+    md031_issues, md032_issues,
+    md033_issues, md034_issues,
+    md035_issues, md036_issues,
+    md037_issues, md038_issues,
+    md039_issues, md040_issues,
+    md041_issues, md046_issues, md047_issues,
   ])
   | {issues: all_issues, summary: count_by_severity(all_issues)}
 end
@@ -468,5 +471,7 @@ Found ${total} issues:
         | let issue_list = s"## Issues
 
 " + join(map(issues, format_issue), "\n") | header + summary_text + issue_list
-      end
+    end
+end
+
 end
