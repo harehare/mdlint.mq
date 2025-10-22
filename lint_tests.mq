@@ -18,14 +18,16 @@ end
 
 # Test data for MD002 - First header should be a top level header
 def test_md002_valid_first_header():
-  let content = to_markdown("# First Header\n## Second Header\n")
-  | let result = md002(content)
+  let config = default_config()
+  | let content = to_markdown("# First Header\n## Second Header\n")
+  | let result = md002(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md002_invalid_first_header():
-  let content = to_markdown("## Not H1\n### Another Header\n")
-  | let result = md002(content)
+  let config = default_config()
+  | let content = to_markdown("## Not H1\n### Another Header\n")
+  | let result = md002(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD002")
   | assert_eq(result[0]["severity"], "error")
@@ -33,14 +35,16 @@ end
 
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
-  let content = to_markdown("# Header 1\n## Header 2\n### Header 3\n")
-  | let result = md024(content)
+  let config = default_config()
+  | let content = to_markdown("# Header 1\n## Header 2\n### Header 3\n")
+  | let result = md024(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md024_duplicate_headers():
-  let content = to_markdown("# Test\n## Test\n")
-  | let result = md024(content)
+  let config = default_config()
+  | let content = to_markdown("# Test\n## Test\n")
+  | let result = md024(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD024")
   | assert_eq(result[0]["severity"], "warning")
@@ -48,14 +52,16 @@ end
 
 # Test data for MD025 - Multiple top level headers
 def test_md025_single_h1():
-  let content = to_markdown("# Only One H1\n## H2\n### H3\n")
-  | let result = md025(content)
+  let config = default_config()
+  | let content = to_markdown("# Only One H1\n## H2\n### H3\n")
+  | let result = md025(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md025_multiple_h1():
-  let content = to_markdown("# First H1\n## H2\n# Second H1\n")
-  | let result = md025(content)
+  let config = default_config()
+  | let content = to_markdown("# First H1\n## H2\n# Second H1\n")
+  | let result = md025(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD025")
   | assert_eq(result[0]["severity"], "error")
@@ -63,36 +69,41 @@ end
 
 # Test data for MD026 - Trailing punctuation in header
 def test_md026_no_trailing_punctuation():
-  let content = to_markdown("# Clean Header\n## Another Clean Header\n")
-  | let result = md026(content)
+  let config = default_config()
+  | let content = to_markdown("# Clean Header\n## Another Clean Header\n")
+  | let result = md026(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md026_trailing_period():
-  let content = to_markdown("# Header with period.\n")
-  | let result = md026(content)
+  let config = default_config()
+  | let content = to_markdown("# Header with period.\n")
+  | let result = md026(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD026")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md026_trailing_question():
-  let content = to_markdown("# Header with question?\n")
-  | let result = md026(content)
+  let config = default_config()
+  | let content = to_markdown("# Header with question?\n")
+  | let result = md026(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD026")
 end
 
 # Test data for MD033 - Inline HTML
 def test_md033_no_html():
-  let content = to_markdown("# Header\n\nJust plain text.\n")
-  | let result = md033(content)
+  let config = default_config()
+  | let content = to_markdown("# Header\n\nJust plain text.\n")
+  | let result = md033(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md033_inline_html():
-  let content = to_markdown("# Header\n\n<div>Some HTML</div>\n")
-  | let result = md033(content)
+  let config = default_config()
+  | let content = to_markdown("# Header\n\n<div>Some HTML</div>\n")
+  | let result = md033(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD033")
   | assert_eq(result[0]["severity"], "warning")
@@ -100,14 +111,16 @@ end
 
 # Test data for MD040 - Fenced code blocks should have a language
 def test_md040_code_with_language():
-  let content = to_markdown("# Header\n\n```javascript\nconsole.log('test');\n```\n")
-  | let result = md040(content)
+  let config = default_config()
+  | let content = to_markdown("# Header\n\n```javascript\nconsole.log('test');\n```\n")
+  | let result = md040(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md040_code_without_language():
-  let content = to_markdown("# Header\n\n```\ncode without language\n```\n")
-  | let result = md040(content)
+  let config = default_config()
+  | let content = to_markdown("# Header\n\n```\ncode without language\n```\n")
+  | let result = md040(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD040")
   | assert_eq(result[0]["severity"], "warning")
@@ -183,6 +196,62 @@ def test_generate_report_with_issues():
   | assert_eq(contains(report, "Found 1 issues"), true)
 end
 
+# Test configuration functions
+def test_default_config():
+  let config = default_config()
+  | assert_eq(contains(config["lint"]["rules"], "MD001"), true)
+  | assert_eq(contains(config["lint"]["rules"], "MD002"), true)
+  | assert_eq(config["lint"]["md002"]["level"], 1)
+end
+
+def test_is_rule_enabled():
+  let config = default_config()
+  | assert_eq(is_rule_enabled(config, "MD001"), true)
+  | assert_eq(is_rule_enabled(config, "MD002"), true)
+  | assert_eq(is_rule_enabled(config, "MD003"), false)
+end
+
+def test_get_rule_config():
+  let config = default_config()
+  | let md002_config = get_rule_config(config, "md002")
+  | assert_eq(md002_config["level"], 1)
+  | let md026_config = get_rule_config(config, "md026")
+  | assert_eq(md026_config["punctuation"], ".,;:!?")
+end
+
+def test_custom_config_md026():
+  let config = {
+    lint: {
+      rules: ["MD026"],
+      md026: {punctuation: ".!"}
+    }
+  }
+  | let content = to_markdown("# Header with comma,\n")
+  | let result = md026(content, config)
+  | assert_eq(len(result), 0)
+  | let content2 = to_markdown("# Header with period.\n")
+  | let result2 = md026(content2, config)
+  | assert_eq(len(result2), 1)
+end
+
+def test_lint_all_with_disabled_rules():
+  let config = {
+    lint: {
+      rules: ["MD001"],
+      md002: {level: 1},
+      md024: {"siblings-only": false},
+      md025: {level: 1},
+      md026: {punctuation: ".,;:!?"},
+      md033: {"allowed-elements": []},
+      md040: {enabled: true}
+    }
+  }
+  | let content = to_markdown("## Not H1\n\n### Skipped Level\n")
+  | let result = lint_all_with_config(content, config)
+  | let total = result["summary"]["total"]
+  | assert_eq(total, 1)
+end
+
 run_tests([
   test_case("MD001: Valid heading progression", test_md001_valid_heading_progression),
   test_case("MD001: Invalid heading skip", test_md001_invalid_heading_skip),
@@ -204,5 +273,10 @@ run_tests([
   test_case("Integration: lint_all clean document", test_lint_all_clean_document),
   test_case("Integration: lint_all with issues", test_lint_all_with_issues),
   test_case("Report: generate_report no issues", test_generate_report_no_issues),
-  test_case("Report: generate_report with issues", test_generate_report_with_issues)
+  test_case("Report: generate_report with issues", test_generate_report_with_issues),
+  test_case("Config: default_config", test_default_config),
+  test_case("Config: is_rule_enabled", test_is_rule_enabled),
+  test_case("Config: get_rule_config", test_get_rule_config),
+  test_case("Config: custom config MD026", test_custom_config_md026),
+  test_case("Config: lint_all with disabled rules", test_lint_all_with_disabled_rules)
 ])
