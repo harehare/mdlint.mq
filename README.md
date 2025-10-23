@@ -145,6 +145,96 @@ console.log("Hello");  ✅ Correct
 ```
 ````
 
+## Configuration
+
+lint.mq supports configuration via a TOML file (`.lintrc.toml`) that allows you to customize linting behavior.
+
+### Configuration File
+
+Create a `.lintrc.toml` file in your project root:
+
+```toml
+[lint]
+# Output format: "detailed" or "concise"
+output-format = "detailed"
+
+# Quiet mode: suppress informational messages
+quiet = false
+
+# Rules to enable (comment out to disable a rule)
+rules = [
+  "MD001",  # heading-increment
+  "MD002",  # first-header-h1
+  "MD024",  # no-duplicate-header
+  "MD025",  # single-h1
+  "MD026",  # no-trailing-punctuation
+  "MD033",  # no-inline-html
+  "MD040",  # fenced-code-language
+]
+
+# Rule-specific configuration
+[lint.md002]
+level = 1  # Expected level for first header
+
+[lint.md024]
+siblings-only = false  # Check all headers or only siblings
+
+[lint.md025]
+level = 1  # Top level header number
+
+[lint.md026]
+punctuation = ".,;:!?"  # Punctuation to flag in headers
+
+[lint.md033]
+allowed-elements = []  # HTML elements to allow (empty = none)
+
+[lint.md040]
+enabled = true  # Require language specification for code blocks
+```
+
+### Loading Configuration
+
+```mq
+include "lint"
+
+# Load configuration from file
+let config = load_config(".lintrc.toml")
+| let merged = merge_config(config)
+
+# Use configuration with linting
+let content = to_markdown(read_file("document.md"))
+| let result = lint_all_with_config(content, merged)
+| generate_report(result)
+```
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `output-format` | string | "detailed" | Output format for reports |
+| `quiet` | boolean | false | Suppress informational messages |
+| `rules` | array | all enabled | List of rules to enable |
+
+### Rule-Specific Options
+
+**MD002** - First header level
+- `level` (integer, default: 1): Expected level for the first header
+
+**MD024** - Duplicate headers
+- `siblings-only` (boolean, default: false): Only check sibling headers
+
+**MD025** - Multiple top-level headers
+- `level` (integer, default: 1): Level considered as "top-level"
+
+**MD026** - Trailing punctuation
+- `punctuation` (string, default: ".,;:!?"): Characters to flag
+
+**MD033** - Inline HTML
+- `allowed-elements` (array, default: []): HTML tags to allow
+
+**MD040** - Code block language
+- `enabled` (boolean, default: true): Require language specification
+
 ## Usage
 
 The linter provides several functions that can be used in your mq scripts:
@@ -152,12 +242,22 @@ The linter provides several functions that can be used in your mq scripts:
 ### Core Functions
 
 #### `lint_all(content)`
-Runs all linting rules on the provided Markdown content and returns a result with issues and summary.
+Runs all linting rules with default configuration on the provided Markdown content and returns a result with issues and summary.
 
 ```mq
 let content = to_markdown("# Title\n\n### Skipped Level\n")
 | let result = lint_all(content)
 | result["summary"]  # {errors: 1, warnings: 0, info: 0, total: 1}
+```
+
+#### `lint_all_with_config(content, config)`
+Runs all linting rules with a custom configuration on the provided Markdown content.
+
+```mq
+let config = load_config(".lintrc.toml") | merge_config()
+| let content = to_markdown("# Title\n\n## Section\n")
+| let result = lint_all_with_config(content, config)
+| result["summary"]
 ```
 
 #### `generate_report(lint_result)`
@@ -215,6 +315,7 @@ When no issues are found:
 
 ```
 lint.mq/
+├── .lintrc.toml      # Configuration file
 ├── lint.mq           # Main linter implementation
 ├── lint_tests.mq     # Comprehensive test suite
 ├── README.md         # This file
@@ -241,8 +342,9 @@ The test suite includes:
 - **Helper Function Tests**: Tests for `format_issue` and `count_by_severity`
 - **Integration Tests**: Tests for `lint_all` with clean and problematic documents
 - **Report Generation Tests**: Tests for `generate_report` with and without issues
+- **Configuration Tests**: Tests for configuration loading, rule enabling/disabling, and custom rule settings
 
-Total: 21 test cases
+Total: 26 test cases
 
 ### Manual Testing
 
@@ -259,12 +361,13 @@ let content = to_markdown(read_file("sample.md"))
 ## Future Enhancements
 
 - Additional markdownlint rules (MD003-MD050+)
-- Configuration file support for enabling/disabling rules
 - Custom rule definitions
 - Integration with CI/CD pipelines
 - Multiple output formats (JSON, XML, SARIF)
 - Auto-fix capabilities for certain rules
 - Watch mode for continuous linting
+- Enhanced HTML element filtering in MD033
+- Line-level accuracy improvements
 
 ## References
 

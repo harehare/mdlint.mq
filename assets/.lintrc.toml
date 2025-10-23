@@ -1,0 +1,51 @@
+# lint.mq Configuration File
+# This file configures the Markdown linter behavior
+
+[lint]
+# Output format: "detailed" or "concise"
+output-format = "detailed"
+
+# Quiet mode: suppress informational messages
+quiet = false
+
+# Rules to enable (comment out to disable a rule)
+rules = [
+  "MD001",  # heading-increment
+  "MD002",  # first-header-h1
+  "MD024",  # no-duplicate-header
+  "MD025",  # single-h1
+  "MD026",  # no-trailing-punctuation
+  "MD033",  # no-inline-html
+  "MD040",  # fenced-code-language
+]
+
+# MD002: First header should be a top level header
+[lint.md002]
+# Heading level for first header (default: 1)
+level = 1
+
+# MD024: Multiple headers with the same content
+[lint.md024]
+# Allow duplicate headings in different sections
+# If true, only siblings are checked (headings at the same level)
+siblings-only = false
+
+# MD025: Multiple top level headers in the same document
+[lint.md025]
+# Heading level considered as top level (default: 1)
+level = 1
+
+# MD026: Trailing punctuation in header
+[lint.md026]
+# Punctuation characters to flag (default: ".,;:!?")
+punctuation = ".,;:!?"
+
+# MD033: Inline HTML
+[lint.md033]
+# Allowed HTML elements (empty array means no HTML allowed)
+allowed-elements = []
+
+# MD040: Fenced code blocks should have a language specified
+[lint.md040]
+# Whether to require language specification
+enabled = true

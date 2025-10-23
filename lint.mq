@@ -1,7 +1,68 @@
 # Markdown Linter - markdownlint Rules Implementation
 # This file implements linting rules based on markdownlint
 #
-# Reference: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.m
+# Reference: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md
+
+include "toml"
+
+# Default configuration
+| def default_config():
+    {
+      lint: {
+        "output-format": "detailed",
+        quiet: false,
+        rules: ["MD001", "MD002", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        md002: {level: 1},
+        md024: {"siblings-only": false},
+        md025: {level: 1},
+        md026: {punctuation: ".,;:!?"},
+        md033: {"allowed-elements": []},
+        md040: {enabled: true}
+      }
+    }
+  end
+
+# Load configuration from TOML file
+def load_config(path):
+  try:
+    do
+      let content = read_file(path)
+      | toml_parse(content)
+    end
+  catch:
+    default_config()
+end
+
+# Merge user config with default config
+def merge_config(user_config):
+  let defaults = default_config()
+  | let lint_config = try: user_config["lint"] catch: {}
+  | let merged_lint = {
+    "output-format": try: lint_config["output-format"] catch: defaults["lint"]["output-format"],
+    quiet: try: lint_config["quiet"] catch: defaults["lint"]["quiet"],
+    rules: try: lint_config["rules"] catch: defaults["lint"]["rules"],
+    md002: try: lint_config["md002"] catch: defaults["lint"]["md002"],
+    md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
+    md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
+    md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
+    md033: try: lint_config["md033"] catch: defaults["lint"]["md033"],
+    md040: try: lint_config["md040"] catch: defaults["lint"]["md040"]
+  }
+  | {lint: merged_lint}
+end
+
+# Check if a rule is enabled
+def is_rule_enabled(config, rule_name):
+  let rules = config["lint"]["rules"]
+  | contains(rules, rule_name)
+end
+
+# Get rule-specific configuration
+def get_rule_config(config, rule_name):
+  let rule_key = downcase(rule_name)
+  | try: config["lint"][rule_key] catch: {}
+end
+
 # MD001: Header levels should only increment by one level at a time
 def md001(content):
   let headings = do content | .h | compact();
@@ -24,33 +85,35 @@ def md001(content):
               line: i + 1,
               details: {previous_level: previous, current_level: current}
             }
-        end
+          end
     end | compact() | flatten()
 end
 
 # MD002: First header should be a top level header
-def md002(content):
-  let headings = do content | .h | compact();
+def md002(content, config):
+  let rule_config = get_rule_config(config, "md002")
+  | let expected_level = try: rule_config["level"] catch: 1
+  | let headings = do content | .h | compact();
   | if (is_empty(headings)): []
     else:
       do
         let first_heading = first(headings)
         | let first_level = attr(first_heading, "level")
-        | if (first_level != 1):
+        | if (first_level != expected_level):
             do
               let heading_text = to_text(first_heading)
               | [{
                 rule: "MD002",
                 name: "first-header-h1",
                 severity: "error",
-                message: s"First header should be h1 (found h${first_level})",
+                message: s"First header should be h${expected_level} (found h${first_level})",
                 heading: heading_text,
                 line: 1,
-                details: {level: first_level}
+                details: {level: first_level, expected: expected_level}
               }]
-          end
+            end
           else: []
-    end
+      end
 end
 
 
@@ -155,7 +218,7 @@ def md023(content): []
 end
 
 # MD024: Multiple headers with the same content
-def md024(content):
+def md024(content, config):
   let headings = do content | .h | compact();
   | let issues = []
   | let seen = {}
@@ -175,14 +238,16 @@ def md024(content):
         elif (!is_none(heading_text)): do
             let seen = set(seen, heading_text, true)
             | None
-        end
+          end
     end | compact()
 end
 
 # MD025: Multiple top level headers in the same document
-def md025(content):
-  let headings = do content | .h | compact();
-  | let h1_headings = filter(headings, fn(h): attr(h, "level") == 1;)
+def md025(content, config):
+  let rule_config = get_rule_config(config, "md025")
+  | let top_level = try: rule_config["level"] catch: 1
+  | let headings = do content | .h | compact();
+  | let h1_headings = filter(headings, fn(h): attr(h, "level") == top_level;)
   | if (len(h1_headings) > 1):
       foreach (i, range(1, len(h1_headings) - 1, 1)):
         let heading_text = to_text(h1_headings[i])
@@ -190,24 +255,26 @@ def md025(content):
           rule: "MD025",
           name: "single-h1",
           severity: "error",
-          message: s"Multiple top level headers found (h1 should be unique)",
+          message: s"Multiple top level headers found (h${top_level} should be unique)",
           heading: heading_text,
           line: i + 1,
-          details: {}
+          details: {level: top_level}
         }
       end
     else: []
 end
 
 # MD026: Trailing punctuation in header
-def md026(content):
-  let headings = do content | .h | compact();
+def md026(content, config):
+  let rule_config = get_rule_config(config, "md026")
+  | let punctuation = try: rule_config["punctuation"] catch: ".,;:!?"
+  | let headings = do content | .h | compact();
   | let issues = []
   | foreach (i, range(0, len(headings) - 1, 1)):
       let heading = headings[i]
       | let heading_text = to_text(heading)
       | let last_char = slice(heading_text, len(heading_text) - 1, len(heading_text))
-      | if (last_char == "." || last_char == "," || last_char == ":" || last_char == ";" || last_char == "!" || last_char == "?"):
+      | if (contains(punctuation, last_char)):
           do
             {
               rule: "MD026",
@@ -218,7 +285,7 @@ def md026(content):
               line: i + 1,
               details: {punctuation: last_char}
             }
-        end
+          end
     end | compact() | flatten()
 end
 
@@ -259,8 +326,10 @@ def md032(content): []
 end
 
 # MD033: Inline HTML
-def md033(content):
-  let html_nodes = do content | .html | compact();
+def md033(content, config):
+  let rule_config = get_rule_config(config, "md033")
+  | let allowed_elements = try: rule_config["allowed-elements"] catch: []
+  | let html_nodes = do content | .html | compact();
   | if (is_empty(html_nodes)): []
     else: do
         let issues = []
@@ -276,7 +345,7 @@ def md033(content):
               details: {html: html_text}
             }
           end
-    end
+      end
 end
 
 # MD034: Bare URL used
@@ -316,24 +385,29 @@ def md039(content): []
 end
 
 # MD040: Fenced code blocks should have a language specified
-def md040(content):
-  let code_blocks = do content | .code | compact();
-  | let issues = []
-  | foreach (i, range(0, len(code_blocks) - 1, 1)):
-      let code_block = code_blocks[i]
-      | let language = attr(code_block, "lang")
-      | if (is_empty(language)):
-          do
-            {
-              rule: "MD040",
-              name: "fenced-code-language",
-              severity: "warning",
-              message: "Fenced code block should have a language specified",
-              line: i + 1,
-              details: {}
-            }
-        end
-    end | compact() | flatten()
+def md040(content, config):
+  let rule_config = get_rule_config(config, "md040")
+  | let enabled = try: rule_config["enabled"] catch: true
+  | if (!enabled): []
+    else: do
+        let code_blocks = do content | .code | compact();
+        | let issues = []
+        | foreach (i, range(0, len(code_blocks) - 1, 1)):
+            let code_block = code_blocks[i]
+            | let language = attr(code_block, "lang")
+            | if (is_empty(language)):
+                do
+                  {
+                    rule: "MD040",
+                    name: "fenced-code-language",
+                    severity: "warning",
+                    message: "Fenced code block should have a language specified",
+                    line: i + 1,
+                    details: {}
+                  }
+                end
+          end | compact() | flatten()
+      end
 end
 
 # MD041: First line in file should be a top level header
@@ -381,47 +455,47 @@ def count_by_severity(issues):
   }
 end
 
-# Run all lint rules
-def lint_all(content):
-  let md001_issues = md001(content)
-  | let md002_issues = md002(content)
-  | let md003_issues = md003(content)
-  | let md004_issues = md004(content)
-  | let md005_issues = md005(content)
-  | let md006_issues = md006(content)
-  | let md007_issues = md007(content)
-  | let md009_issues = md009(content)
-  | let md010_issues = md010(content)
-  | let md011_issues = md011(content)
-  | let md012_issues = md012(content)
-  | let md013_issues = md013(content)
-  | let md014_issues = md014(content)
-  | let md018_issues = md018(content)
-  | let md019_issues = md019(content)
-  | let md020_issues = md020(content)
-  | let md021_issues = md021(content)
-  | let md022_issues = md022(content)
-  | let md023_issues = md023(content)
-  | let md024_issues = md024(content)
-  | let md025_issues = md025(content)
-  | let md026_issues = md026(content)
-  | let md027_issues = md027(content)
-  | let md028_issues = md028(content)
-  | let md029_issues = md029(content)
-  | let md030_issues = md030(content)
-  | let md031_issues = md031(content)
-  | let md032_issues = md032(content)
-  | let md033_issues = md033(content)
-  | let md034_issues = md034(content)
-  | let md035_issues = md035(content)
-  | let md036_issues = md036(content)
-  | let md037_issues = md037(content)
-  | let md038_issues = md038(content)
-  | let md039_issues = md039(content)
-  | let md040_issues = md040(content)
-  | let md041_issues = md041(content)
-  | let md046_issues = md046(content)
-  | let md047_issues = md047(content)
+# Run all lint rules with configuration
+def lint_all_with_config(content, config):
+  let md001_issues = if (is_rule_enabled(config, "MD001")): md001(content) else: []
+  | let md002_issues = if (is_rule_enabled(config, "MD002")): md002(content, config) else: []
+  | let md003_issues = if (is_rule_enabled(config, "MD003")): md003(content) else: []
+  | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(content) else: []
+  | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(content) else: []
+  | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(content) else: []
+  | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(content) else: []
+  | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(content) else: []
+  | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(content) else: []
+  | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(content) else: []
+  | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(content) else: []
+  | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(content) else: []
+  | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(content) else: []
+  | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(content) else: []
+  | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(content) else: []
+  | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(content) else: []
+  | let md021_issues = if (is_rule_enabled(config, "MD021")): md021(content) else: []
+  | let md022_issues = if (is_rule_enabled(config, "MD022")): md022(content) else: []
+  | let md023_issues = if (is_rule_enabled(config, "MD023")): md023(content) else: []
+  | let md024_issues = if (is_rule_enabled(config, "MD024")): md024(content, config) else: []
+  | let md025_issues = if (is_rule_enabled(config, "MD025")): md025(content, config) else: []
+  | let md026_issues = if (is_rule_enabled(config, "MD026")): md026(content, config) else: []
+  | let md027_issues = if (is_rule_enabled(config, "MD027")): md027(content) else: []
+  | let md028_issues = if (is_rule_enabled(config, "MD028")): md028(content) else: []
+  | let md029_issues = if (is_rule_enabled(config, "MD029")): md029(content) else: []
+  | let md030_issues = if (is_rule_enabled(config, "MD030")): md030(content) else: []
+  | let md031_issues = if (is_rule_enabled(config, "MD031")): md031(content) else: []
+  | let md032_issues = if (is_rule_enabled(config, "MD032")): md032(content) else: []
+  | let md033_issues = if (is_rule_enabled(config, "MD033")): md033(content, config) else: []
+  | let md034_issues = if (is_rule_enabled(config, "MD034")): md034(content) else: []
+  | let md035_issues = if (is_rule_enabled(config, "MD035")): md035(content) else: []
+  | let md036_issues = if (is_rule_enabled(config, "MD036")): md036(content) else: []
+  | let md037_issues = if (is_rule_enabled(config, "MD037")): md037(content) else: []
+  | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(content) else: []
+  | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(content) else: []
+  | let md040_issues = if (is_rule_enabled(config, "MD040")): md040(content, config) else: []
+  | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(content) else: []
+  | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(content) else: []
+  | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(content) else: []
   | let all_issues = flatten([
     md001_issues, md002_issues,
     md003_issues, md004_issues,
@@ -444,6 +518,12 @@ def lint_all(content):
     md041_issues, md046_issues, md047_issues,
   ])
   | {issues: all_issues, summary: count_by_severity(all_issues)}
+end
+
+# Run all lint rules (backward compatibility)
+def lint_all(content):
+  let config = default_config()
+  | lint_all_with_config(content, config)
 end
 
 # Generate formatted report
@@ -471,7 +551,5 @@ Found ${total} issues:
         | let issue_list = s"## Issues
 
 " + join(map(issues, format_issue), "\n") | header + summary_text + issue_list
-    end
-end
-
+      end
 end
