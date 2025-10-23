@@ -9,16 +9,16 @@ include "toml"
 | def default_config():
     {
       lint: {
-  "output-format": "detailed",
-  quiet: false,
-  rules: ["MD001", "MD002", "MD024", "MD025", "MD026", "MD033", "MD040"],
-  md002: {level: 1},
-  md024: {"siblings-only": false},
-  md025: {level: 1},
-  md026: {punctuation: ".,;:!?"},
-  md033: {"allowed-elements": []},
-  md040: {enabled: true}
-}
+        "output-format": "detailed",
+        quiet: false,
+        rules: ["MD001", "MD002", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        md002: {level: 1},
+        md024: {"siblings-only": false},
+        md025: {level: 1},
+        md026: {punctuation: ".,;:!?"},
+        md033: {"allowed-elements": []},
+        md040: {enabled: true}
+      }
     }
   end
 
@@ -28,7 +28,7 @@ def load_config(path):
     do
       let content = read_file(path)
       | toml_parse(content)
-  end
+    end
   catch:
     default_config()
 end
@@ -85,7 +85,7 @@ def md001(content):
               line: i + 1,
               details: {previous_level: previous, current_level: current}
             }
-        end
+          end
     end | compact() | flatten()
 end
 
@@ -111,9 +111,9 @@ def md002(content, config):
                 line: 1,
                 details: {level: first_level, expected: expected_level}
               }]
-          end
+            end
           else: []
-    end
+      end
 end
 
 
@@ -238,7 +238,7 @@ def md024(content, config):
         elif (!is_none(heading_text)): do
             let seen = set(seen, heading_text, true)
             | None
-        end
+          end
     end | compact()
 end
 
@@ -285,7 +285,7 @@ def md026(content, config):
               line: i + 1,
               details: {punctuation: last_char}
             }
-        end
+          end
     end | compact() | flatten()
 end
 
@@ -345,7 +345,7 @@ def md033(content, config):
               details: {html: html_text}
             }
           end
-    end
+      end
 end
 
 # MD034: Bare URL used
@@ -405,9 +405,9 @@ def md040(content, config):
                     line: i + 1,
                     details: {}
                   }
-              end
+                end
           end | compact() | flatten()
-    end
+      end
 end
 
 # MD041: First line in file should be a top level header
@@ -551,5 +551,5 @@ Found ${total} issues:
         | let issue_list = s"## Issues
 
 " + join(map(issues, format_issue), "\n") | header + summary_text + issue_list
-    end
+      end
 end

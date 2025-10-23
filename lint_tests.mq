@@ -237,7 +237,7 @@ end
 def test_lint_all_with_disabled_rules():
   let config = {
     lint: {
-      rules: ["MD001"],
+      rules: ["MD002"],
       md002: {level: 1},
       md024: {"siblings-only": false},
       md025: {level: 1},
