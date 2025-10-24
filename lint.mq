@@ -11,8 +11,9 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD024", "MD025", "MD026", "MD033", "MD040"],
         md002: {level: 1},
+        md003: {style: "consistent"},
         md024: {"siblings-only": false},
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
@@ -42,6 +43,7 @@ def merge_config(user_config):
     quiet: try: lint_config["quiet"] catch: defaults["lint"]["quiet"],
     rules: try: lint_config["rules"] catch: defaults["lint"]["rules"],
     md002: try: lint_config["md002"] catch: defaults["lint"]["md002"],
+    md003: try: lint_config["md003"] catch: defaults["lint"]["md003"],
     md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
     md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
     md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
@@ -117,10 +119,67 @@ def md002(content, config):
 end
 
 
+def detect_heading_style(line):
+  let trimmed = trim(line)
+  | if (is_empty(trimmed)): "none"
+    elif (starts_with(trimmed, "#")):
+      do
+        let has_closing_hash = ends_with(trim(trimmed), "#")
+        | if (has_closing_hash): "atx_closed"
+          else: "atx"
+      end
+    else: "none"
+end
+
 # MD003: Header style consistency
-# TODO: Implement header style consistency check
-# Requires access to raw markdown text to detect ATX vs Setext styles
-def md003(content): []
+def md003(md, lines, config):
+  let rule_config = get_rule_config(config, "md003")
+  | let expected_style = try: rule_config["style"] catch: "consistent"
+  | let headings = do md | .h | compact();
+  | if (is_empty(headings)): []
+    else:
+      do
+        # Detect all heading styles
+        let heading_info = foreach (head, headings):
+                  let pos = _get_markdown_position(head)
+                  | let line_num = pos["start_line"]
+                  | let line = if (line_num > 0 && line_num <= len(lines)): lines[line_num - 1] else: ""
+                  | let style = detect_heading_style(line)
+                  | if (style != "none"): {line: line_num, style: style, text: to_text(head)} else: None
+                end
+
+        # Determine the target style
+        | let target_style = if (expected_style == "consistent"):
+                  if (len(heading_info) > 0): heading_info[0]["style"] else: "atx"
+                else: expected_style
+
+        # Check each heading for consistency
+        | foreach (info, heading_info):
+            let style = info["style"]
+            | let line_num = info["line"]
+            | let heading_text = info["text"]
+            | if (expected_style == "consistent" && style != target_style):
+                {
+                  rule: "MD003",
+                  name: "heading-style",
+                  severity: "error",
+                  message: s"Inconsistent heading style: expected '${target_style}' but found '${style}'",
+                  heading: heading_text,
+                  line: line_num,
+                  details: {expected: target_style, found: style}
+                }
+              elif (expected_style != "consistent" && style != target_style):
+                {
+                  rule: "MD003",
+                  name: "heading-style",
+                  severity: "error",
+                  message: s"Heading style should be '${target_style}' but found '${style}'",
+                  heading: heading_text,
+                  line: line_num,
+                  details: {expected: target_style, found: style}
+                }
+          end | compact()
+      end
 end
 
 # MD004: Unordered list style
@@ -457,45 +516,47 @@ end
 
 # Run all lint rules with configuration
 def lint_all_with_config(content, config):
-  let md001_issues = if (is_rule_enabled(config, "MD001")): md001(content) else: []
-  | let md002_issues = if (is_rule_enabled(config, "MD002")): md002(content, config) else: []
-  | let md003_issues = if (is_rule_enabled(config, "MD003")): md003(content) else: []
-  | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(content) else: []
-  | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(content) else: []
-  | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(content) else: []
-  | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(content) else: []
-  | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(content) else: []
-  | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(content) else: []
-  | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(content) else: []
-  | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(content) else: []
-  | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(content) else: []
-  | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(content) else: []
-  | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(content) else: []
-  | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(content) else: []
-  | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(content) else: []
-  | let md021_issues = if (is_rule_enabled(config, "MD021")): md021(content) else: []
-  | let md022_issues = if (is_rule_enabled(config, "MD022")): md022(content) else: []
-  | let md023_issues = if (is_rule_enabled(config, "MD023")): md023(content) else: []
-  | let md024_issues = if (is_rule_enabled(config, "MD024")): md024(content, config) else: []
-  | let md025_issues = if (is_rule_enabled(config, "MD025")): md025(content, config) else: []
-  | let md026_issues = if (is_rule_enabled(config, "MD026")): md026(content, config) else: []
-  | let md027_issues = if (is_rule_enabled(config, "MD027")): md027(content) else: []
-  | let md028_issues = if (is_rule_enabled(config, "MD028")): md028(content) else: []
-  | let md029_issues = if (is_rule_enabled(config, "MD029")): md029(content) else: []
-  | let md030_issues = if (is_rule_enabled(config, "MD030")): md030(content) else: []
-  | let md031_issues = if (is_rule_enabled(config, "MD031")): md031(content) else: []
-  | let md032_issues = if (is_rule_enabled(config, "MD032")): md032(content) else: []
-  | let md033_issues = if (is_rule_enabled(config, "MD033")): md033(content, config) else: []
-  | let md034_issues = if (is_rule_enabled(config, "MD034")): md034(content) else: []
-  | let md035_issues = if (is_rule_enabled(config, "MD035")): md035(content) else: []
-  | let md036_issues = if (is_rule_enabled(config, "MD036")): md036(content) else: []
-  | let md037_issues = if (is_rule_enabled(config, "MD037")): md037(content) else: []
-  | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(content) else: []
-  | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(content) else: []
-  | let md040_issues = if (is_rule_enabled(config, "MD040")): md040(content, config) else: []
-  | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(content) else: []
-  | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(content) else: []
-  | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(content) else: []
+  let md = to_markdown(content)
+  | let lines = split(content, "\n")
+  | let md001_issues = if (is_rule_enabled(config, "MD001")): md001(md) else: []
+  | let md002_issues = if (is_rule_enabled(config, "MD002")): md002(md, config) else: []
+  | let md003_issues = if (is_rule_enabled(config, "MD003")): md003(md, lines, config) else: []
+  | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(md) else: []
+  | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(md) else: []
+  | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(md) else: []
+  | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(md) else: []
+  | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md) else: []
+  | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md) else: []
+  | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
+  | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md) else: []
+  | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md) else: []
+  | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md) else: []
+  | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md) else: []
+  | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(md) else: []
+  | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(md) else: []
+  | let md021_issues = if (is_rule_enabled(config, "MD021")): md021(md) else: []
+  | let md022_issues = if (is_rule_enabled(config, "MD022")): md022(md) else: []
+  | let md023_issues = if (is_rule_enabled(config, "MD023")): md023(md) else: []
+  | let md024_issues = if (is_rule_enabled(config, "MD024")): md024(md, config) else: []
+  | let md025_issues = if (is_rule_enabled(config, "MD025")): md025(md, config) else: []
+  | let md026_issues = if (is_rule_enabled(config, "MD026")): md026(md, config) else: []
+  | let md027_issues = if (is_rule_enabled(config, "MD027")): md027(md) else: []
+  | let md028_issues = if (is_rule_enabled(config, "MD028")): md028(md) else: []
+  | let md029_issues = if (is_rule_enabled(config, "MD029")): md029(md) else: []
+  | let md030_issues = if (is_rule_enabled(config, "MD030")): md030(md) else: []
+  | let md031_issues = if (is_rule_enabled(config, "MD031")): md031(md) else: []
+  | let md032_issues = if (is_rule_enabled(config, "MD032")): md032(md) else: []
+  | let md033_issues = if (is_rule_enabled(config, "MD033")): md033(md, config) else: []
+  | let md034_issues = if (is_rule_enabled(config, "MD034")): md034(md) else: []
+  | let md035_issues = if (is_rule_enabled(config, "MD035")): md035(md) else: []
+  | let md036_issues = if (is_rule_enabled(config, "MD036")): md036(md) else: []
+  | let md037_issues = if (is_rule_enabled(config, "MD037")): md037(md) else: []
+  | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(md) else: []
+  | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(md) else: []
+  | let md040_issues = if (is_rule_enabled(config, "MD040")): md040(md, config) else: []
+  | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(md) else: []
+  | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(md) else: []
+  | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(md) else: []
   | let all_issues = flatten([
     md001_issues, md002_issues,
     md003_issues, md004_issues,
