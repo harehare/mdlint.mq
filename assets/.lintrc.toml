@@ -10,19 +10,29 @@ quiet = false
 
 # Rules to enable (comment out to disable a rule)
 rules = [
-  "MD001",  # heading-increment
-  "MD002",  # first-header-h1
-  "MD024",  # no-duplicate-header
-  "MD025",  # single-h1
-  "MD026",  # no-trailing-punctuation
-  "MD033",  # no-inline-html
-  "MD040",  # fenced-code-language
+  "MD001", # heading-increment
+  "MD002", # first-header-h1
+  "MD003", # heading-style
+  "MD024", # no-duplicate-header
+  "MD025", # single-h1
+  "MD026", # no-trailing-punctuation
+  "MD033", # no-inline-html
+  "MD040", # fenced-code-language
 ]
 
 # MD002: First header should be a top level header
 [lint.md002]
 # Heading level for first header (default: 1)
 level = 1
+
+# MD003: Heading style
+[lint.md003]
+# Heading style: "consistent", "atx", "atx_closed", or "setext"
+# - "consistent": use the style of the first heading (default)
+# - "atx": use # for all headings (e.g., # Heading)
+# - "atx_closed": use # with closing # (e.g., # Heading #)
+# - "setext": use underlines for h1 and h2 (e.g., Heading\n=======)
+style = "consistent"
 
 # MD024: Multiple headers with the same content
 [lint.md024]

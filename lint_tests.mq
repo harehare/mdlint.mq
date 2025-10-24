@@ -33,6 +33,60 @@ def test_md002_invalid_first_header():
   | assert_eq(result[0]["severity"], "error")
 end
 
+# Test data for MD003 - Heading style consistency
+def test_md003_consistent_atx_style():
+  let config = default_config()
+  | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md003_inconsistent_styles():
+  let config = default_config()
+  | let raw_content = "# Header 1\n## Header 2\n### Header 3 ###\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD003")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md003_enforce_atx_style():
+  let config = {
+    lint: {
+      rules: ["MD003"],
+      md003: {style: "atx"}
+    }
+  }
+  | let raw_content = "# Header 1\n## Header 2 ##\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD003")
+  | assert_eq(result[0]["details"]["expected"], "atx")
+  | assert_eq(result[0]["details"]["found"], "atx_closed")
+end
+
+def test_md003_enforce_atx_closed_style():
+  let config = {
+    lint: {
+      rules: ["MD003"],
+      md003: {style: "atx_closed"}
+    }
+  }
+  | let raw_content = "# Header 1 #\n## Header 2 ##\n### Header 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "atx_closed")
+  | assert_eq(result[0]["details"]["found"], "atx")
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -157,13 +211,13 @@ end
 
 # Integration test with lint_all
 def test_lint_all_clean_document():
-  let content = to_markdown("# Title\n\n## Section\n\nContent here.\n")
+  let content = "# Title\n\n## Section\n\nContent here.\n"
   | let result = lint_all(content)
   | assert_eq(result["summary"]["errors"], 0)
 end
 
 def test_lint_all_with_issues():
-  let content = to_markdown("## Not H1\n\n### Skipped Level\n\n# Duplicate\n\n# Duplicate\n")
+  let content = "## Not H1\n\n### Skipped Level\n\n# Duplicate\n\n# Duplicate\n"
   | let result = lint_all(content)
   | let total = result["summary"]["total"]
   | assert_eq(total > 0, true)
@@ -208,7 +262,8 @@ def test_is_rule_enabled():
   let config = default_config()
   | assert_eq(is_rule_enabled(config, "MD001"), true)
   | assert_eq(is_rule_enabled(config, "MD002"), true)
-  | assert_eq(is_rule_enabled(config, "MD003"), false)
+  | assert_eq(is_rule_enabled(config, "MD003"), true)
+  | assert_eq(is_rule_enabled(config, "MD004"), false)
 end
 
 def test_get_rule_config():
@@ -246,7 +301,7 @@ def test_lint_all_with_disabled_rules():
       md040: {enabled: true}
     }
   }
-  | let content = to_markdown("## Not H1\n\n### Skipped Level\n")
+  | let content = "## Not H1\n\n### Skipped Level\n"
   | let result = lint_all_with_config(content, config)
   | let total = result["summary"]["total"]
   | assert_eq(total, 1)
@@ -257,6 +312,10 @@ run_tests([
   test_case("MD001: Invalid heading skip", test_md001_invalid_heading_skip),
   test_case("MD002: Valid first header", test_md002_valid_first_header),
   test_case("MD002: Invalid first header", test_md002_invalid_first_header),
+  test_case("MD003: Consistent ATX style", test_md003_consistent_atx_style),
+  test_case("MD003: Inconsistent styles", test_md003_inconsistent_styles),
+  test_case("MD003: Enforce ATX style", test_md003_enforce_atx_style),
+  test_case("MD003: Enforce ATX closed style", test_md003_enforce_atx_closed_style),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),
