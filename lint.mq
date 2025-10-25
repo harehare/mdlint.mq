@@ -11,12 +11,13 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD024", "MD025", "MD026", "MD033", "MD040"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
         md009: {br_spaces: 2, strict: false},
         md010: {code_blocks: true},
+        md012: {maximum: 1},
         md024: {"siblings-only": false},
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
@@ -50,6 +51,7 @@ def merge_config(user_config):
     md004: try: lint_config["md004"] catch: defaults["lint"]["md004"],
     md009: try: lint_config["md009"] catch: defaults["lint"]["md009"],
     md010: try: lint_config["md010"] catch: defaults["lint"]["md010"],
+    md012: try: lint_config["md012"] catch: defaults["lint"]["md012"],
     md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
     md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
     md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
@@ -360,9 +362,38 @@ def md011(content): []
 end
 
 # MD012: Multiple consecutive blank lines
-# TODO: Implement multiple consecutive blank lines check
-# Requires access to raw markdown text
-def md012(content): []
+def md012(md, lines, config):
+  let rule_config = get_rule_config(config, "md012")
+  | let maximum = try: rule_config["maximum"] catch: 1
+  | let blank_count = 0
+  | let blank_start = 0
+  | foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let is_blank = is_empty(trim(line))
+      | if (is_blank):
+          do
+            let blank_count = blank_count + 1
+            | let blank_start = if (blank_count == 1): i + 1 else: blank_start
+            | None
+          end
+        else:
+          do
+            # Check if we had too many consecutive blank lines
+            let result = if (blank_count > maximum):
+                {
+                  rule: "MD012",
+                  name: "no-multiple-blanks",
+                  severity: "error",
+                  message: s"Multiple consecutive blank lines (${blank_count} blank lines, maximum: ${maximum})",
+                  line: blank_start,
+                  details: {count: blank_count, maximum: maximum}
+                }
+              else: None
+            | let blank_count = 0
+            | let blank_start = 0
+            | result
+          end
+    end | compact()
 end
 
 # MD013: Line length
@@ -663,7 +694,7 @@ def lint_all_with_config(content, config):
   | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md, lines, config) else: []
   | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md, lines, config) else: []
   | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
-  | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md) else: []
+  | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md, lines, config) else: []
   | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md) else: []
   | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md) else: []
   | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md) else: []

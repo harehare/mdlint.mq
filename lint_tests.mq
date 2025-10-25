@@ -366,6 +366,76 @@ def test_md010_tabs_outside_code_block():
   | assert_eq(len(result), 2)
 end
 
+# Test data for MD012 - Multiple consecutive blank lines
+def test_md012_single_blank_line():
+  let config = default_config()
+  | let raw_content = "Line 1\n\nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md012(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md012_multiple_blank_lines():
+  let config = default_config()
+  | let raw_content = "Line 1\n\n\nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md012(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD012")
+  | assert_eq(result[0]["severity"], "error")
+  | assert_eq(result[0]["details"]["count"], 2)
+end
+
+def test_md012_three_blank_lines():
+  let config = default_config()
+  | let raw_content = "Line 1\n\n\n\nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md012(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["count"], 3)
+end
+
+def test_md012_custom_maximum():
+  let config = {
+    lint: {
+      rules: ["MD012"],
+      md012: {maximum: 2}
+    }
+  }
+  | let raw_content = "Line 1\n\n\nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md012(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md012_custom_maximum_exceeded():
+  let config = {
+    lint: {
+      rules: ["MD012"],
+      md012: {maximum: 2}
+    }
+  }
+  | let raw_content = "Line 1\n\n\n\nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md012(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["count"], 3)
+end
+
+def test_md012_multiple_violations():
+  let config = default_config()
+  | let raw_content = "Line 1\n\n\nLine 2\n\n\nLine 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md012(content, lines, config)
+  | assert_eq(len(result), 2)
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -619,6 +689,12 @@ run_tests([
   test_case("MD010: Tabs in code block allowed", test_md010_tabs_in_code_block_allowed),
   test_case("MD010: Tabs in code block strict", test_md010_tabs_in_code_block_strict),
   test_case("MD010: Tabs outside code block", test_md010_tabs_outside_code_block),
+  test_case("MD012: Single blank line", test_md012_single_blank_line),
+  test_case("MD012: Multiple blank lines", test_md012_multiple_blank_lines),
+  test_case("MD012: Three blank lines", test_md012_three_blank_lines),
+  test_case("MD012: Custom maximum", test_md012_custom_maximum),
+  test_case("MD012: Custom maximum exceeded", test_md012_custom_maximum_exceeded),
+  test_case("MD012: Multiple violations", test_md012_multiple_violations),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),
