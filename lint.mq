@@ -11,7 +11,7 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD013", "MD014", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD013", "MD014", "MD018", "MD024", "MD025", "MD026", "MD033", "MD040"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
@@ -20,6 +20,7 @@ include "toml"
         md012: {maximum: 1},
         md013: {line_length: 80, code_blocks: true, tables: true, headings: true},
         md014: {enabled: true},
+        md018: {enabled: true},
         md024: {"siblings-only": false},
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
@@ -56,6 +57,7 @@ def merge_config(user_config):
     md012: try: lint_config["md012"] catch: defaults["lint"]["md012"],
     md013: try: lint_config["md013"] catch: defaults["lint"]["md013"],
     md014: try: lint_config["md014"] catch: defaults["lint"]["md014"],
+    md018: try: lint_config["md018"] catch: defaults["lint"]["md018"],
     md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
     md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
     md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
@@ -472,9 +474,29 @@ def md014(md, lines, config):
 end
 
 # MD018: No space after hash on atx style header
-# TODO: Implement check for space after hash
-# Requires access to raw markdown text
-def md018(content): []
+def md018(md, lines, config):
+  foreach (i, range(0, len(lines) - 1, 1)):
+    let line = lines[i]
+    | let trimmed = trim(line)
+    # Check if line starts with # (atx style heading)
+    | if (starts_with(trimmed, "#")):
+        do
+          # Check if there's no space after the hash(es)
+          # Pattern: one or more # followed by a non-space, non-# character
+          let has_no_space = regex_match(trimmed, "^#+[^ #]")
+          | if (has_no_space):
+              {
+                rule: "MD018",
+                name: "no-missing-space-atx",
+                severity: "error",
+                message: "No space after hash on atx style heading",
+                line: i + 1,
+                details: {}
+              }
+            else: None
+        end
+      else: None
+  end | compact()
 end
 
 # MD019: Multiple spaces after hash on atx style header
@@ -760,7 +782,7 @@ def lint_all_with_config(content, config):
   | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md, lines, config) else: []
   | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md, lines, config) else: []
   | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md, lines, config) else: []
-  | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md) else: []
+  | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md, lines, config) else: []
   | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(md) else: []
   | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(md) else: []
   | let md021_issues = if (is_rule_enabled(config, "MD021")): md021(md) else: []

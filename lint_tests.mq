@@ -566,6 +566,55 @@ def test_md014_mixed_commands():
   | assert_eq(len(result), 2)
 end
 
+# Test data for MD018 - No space after hash
+def test_md018_proper_spacing():
+  let config = default_config()
+  | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md018(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md018_no_space_after_hash():
+  let config = default_config()
+  | let raw_content = "#Header without space\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md018(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD018")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md018_multiple_hashes_no_space():
+  let config = default_config()
+  | let raw_content = "##Header\n###Another\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md018(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD018")
+end
+
+def test_md018_mixed_headers():
+  let config = default_config()
+  | let raw_content = "# Good Header\n##Bad Header\n### Another Good\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md018(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md018_closed_atx_style():
+  let config = default_config()
+  | let raw_content = "# Header #\n## Header 2 ##\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md018(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -837,6 +886,11 @@ run_tests([
   test_case("MD014: Multiple dollar signs", test_md014_multiple_dollar_signs),
   test_case("MD014: No code block", test_md014_no_code_block),
   test_case("MD014: Mixed commands", test_md014_mixed_commands),
+  test_case("MD018: Proper spacing", test_md018_proper_spacing),
+  test_case("MD018: No space after hash", test_md018_no_space_after_hash),
+  test_case("MD018: Multiple hashes no space", test_md018_multiple_hashes_no_space),
+  test_case("MD018: Mixed headers", test_md018_mixed_headers),
+  test_case("MD018: Closed atx style", test_md018_closed_atx_style),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),
