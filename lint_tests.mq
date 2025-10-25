@@ -87,6 +87,62 @@ def test_md003_enforce_atx_closed_style():
   | assert_eq(result[0]["details"]["found"], "atx")
 end
 
+def test_md003_consistent_setext_style():
+  let config = default_config()
+  | let raw_content = "Header 1\n========\n\nHeader 2\n--------\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md003_enforce_setext_style():
+  let config = {
+    lint: {
+      rules: ["MD003"],
+      md003: {style: "setext"}
+    }
+  }
+  | let raw_content = "Header 1\n========\n\n## Header 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD003")
+  | assert_eq(result[0]["details"]["expected"], "setext")
+  | assert_eq(result[0]["details"]["found"], "atx")
+end
+
+def test_md003_mixed_atx_and_setext():
+  let config = default_config()
+  | let raw_content = "# Header 1\n\nHeader 2\n--------\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD003")
+  | assert_eq(result[0]["details"]["expected"], "atx")
+  | assert_eq(result[0]["details"]["found"], "setext")
+end
+
+def test_md003_setext_h1_only():
+  let config = default_config()
+  | let raw_content = "Header 1\n========\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md003_setext_h2_only():
+  let config = default_config()
+  | let raw_content = "Header 2\n--------\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md003(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -316,6 +372,11 @@ run_tests([
   test_case("MD003: Inconsistent styles", test_md003_inconsistent_styles),
   test_case("MD003: Enforce ATX style", test_md003_enforce_atx_style),
   test_case("MD003: Enforce ATX closed style", test_md003_enforce_atx_closed_style),
+  test_case("MD003: Consistent setext style", test_md003_consistent_setext_style),
+  test_case("MD003: Enforce setext style", test_md003_enforce_setext_style),
+  test_case("MD003: Mixed ATX and setext", test_md003_mixed_atx_and_setext),
+  test_case("MD003: Setext H1 only", test_md003_setext_h1_only),
+  test_case("MD003: Setext H2 only", test_md003_setext_h2_only),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),

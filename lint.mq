@@ -119,14 +119,23 @@ def md002(content, config):
 end
 
 
-def detect_heading_style(line):
+def detect_heading_style(line, next_line):
   let trimmed = trim(line)
+  | let next_trimmed = trim(next_line)
   | if (is_empty(trimmed)): "none"
     elif (starts_with(trimmed, "#")):
       do
         let has_closing_hash = ends_with(trim(trimmed), "#")
         | if (has_closing_hash): "atx_closed"
           else: "atx"
+      end
+    elif (!is_empty(next_trimmed)):
+      do
+        # Check for setext style (underlined with = or -)
+        let is_setext_h1 = regex_match(next_trimmed, "^=+$")
+        | let is_setext_h2 = regex_match(next_trimmed, "^-+$")
+        | if (is_setext_h1 || is_setext_h2): "setext"
+          else: "none"
       end
     else: "none"
 end
@@ -144,7 +153,8 @@ def md003(md, lines, config):
                   let pos = _get_markdown_position(head)
                   | let line_num = pos["start_line"]
                   | let line = if (line_num > 0 && line_num <= len(lines)): lines[line_num - 1] else: ""
-                  | let style = detect_heading_style(line)
+                  | let next_line = if (line_num < len(lines)): lines[line_num] else: ""
+                  | let style = detect_heading_style(line, next_line)
                   | if (style != "none"): {line: line_num, style: style, text: to_text(head)} else: None
                 end
 
