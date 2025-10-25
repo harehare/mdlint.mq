@@ -143,6 +143,94 @@ def test_md003_setext_h2_only():
   | assert_eq(len(result), 0)
 end
 
+# Test data for MD004 - Unordered list style
+def test_md004_consistent_dash_style():
+  let config = default_config()
+  | let raw_content = "- Item 1\n- Item 2\n- Item 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md004_consistent_asterisk_style():
+  let config = default_config()
+  | let raw_content = "* Item 1\n* Item 2\n* Item 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md004_consistent_plus_style():
+  let config = default_config()
+  | let raw_content = "+ Item 1\n+ Item 2\n+ Item 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md004_inconsistent_styles():
+  let config = default_config()
+  | let raw_content = "- Item 1\n* Item 2\n+ Item 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD004")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md004_enforce_dash_style():
+  let config = {
+    lint: {
+      rules: ["MD004"],
+      md004: {style: "dash"}
+    }
+  }
+  | let raw_content = "- Item 1\n* Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD004")
+  | assert_eq(result[0]["details"]["expected"], "dash")
+  | assert_eq(result[0]["details"]["found"], "asterisk")
+end
+
+def test_md004_enforce_asterisk_style():
+  let config = {
+    lint: {
+      rules: ["MD004"],
+      md004: {style: "asterisk"}
+    }
+  }
+  | let raw_content = "* Item 1\n- Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "asterisk")
+  | assert_eq(result[0]["details"]["found"], "dash")
+end
+
+def test_md004_enforce_plus_style():
+  let config = {
+    lint: {
+      rules: ["MD004"],
+      md004: {style: "plus"}
+    }
+  }
+  | let raw_content = "+ Item 1\n- Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md004(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "plus")
+  | assert_eq(result[0]["details"]["found"], "dash")
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -319,7 +407,7 @@ def test_is_rule_enabled():
   | assert_eq(is_rule_enabled(config, "MD001"), true)
   | assert_eq(is_rule_enabled(config, "MD002"), true)
   | assert_eq(is_rule_enabled(config, "MD003"), true)
-  | assert_eq(is_rule_enabled(config, "MD004"), false)
+  | assert_eq(is_rule_enabled(config, "MD004"), true)
 end
 
 def test_get_rule_config():
@@ -377,6 +465,13 @@ run_tests([
   test_case("MD003: Mixed ATX and setext", test_md003_mixed_atx_and_setext),
   test_case("MD003: Setext H1 only", test_md003_setext_h1_only),
   test_case("MD003: Setext H2 only", test_md003_setext_h2_only),
+  test_case("MD004: Consistent dash style", test_md004_consistent_dash_style),
+  test_case("MD004: Consistent asterisk style", test_md004_consistent_asterisk_style),
+  test_case("MD004: Consistent plus style", test_md004_consistent_plus_style),
+  test_case("MD004: Inconsistent styles", test_md004_inconsistent_styles),
+  test_case("MD004: Enforce dash style", test_md004_enforce_dash_style),
+  test_case("MD004: Enforce asterisk style", test_md004_enforce_asterisk_style),
+  test_case("MD004: Enforce plus style", test_md004_enforce_plus_style),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),

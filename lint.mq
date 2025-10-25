@@ -11,9 +11,10 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD024", "MD025", "MD026", "MD033", "MD040"],
         md002: {level: 1},
         md003: {style: "consistent"},
+        md004: {style: "consistent"},
         md024: {"siblings-only": false},
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
@@ -44,6 +45,7 @@ def merge_config(user_config):
     rules: try: lint_config["rules"] catch: defaults["lint"]["rules"],
     md002: try: lint_config["md002"] catch: defaults["lint"]["md002"],
     md003: try: lint_config["md003"] catch: defaults["lint"]["md003"],
+    md004: try: lint_config["md004"] catch: defaults["lint"]["md004"],
     md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
     md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
     md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
@@ -119,7 +121,7 @@ def md002(content, config):
 end
 
 
-def detect_heading_style(line, next_line):
+def _detect_heading_style(line, next_line):
   let trimmed = trim(line)
   | let next_trimmed = trim(next_line)
   | if (is_empty(trimmed)): "none"
@@ -154,7 +156,7 @@ def md003(md, lines, config):
                   | let line_num = pos["start_line"]
                   | let line = if (line_num > 0 && line_num <= len(lines)): lines[line_num - 1] else: ""
                   | let next_line = if (line_num < len(lines)): lines[line_num] else: ""
-                  | let style = detect_heading_style(line, next_line)
+                  | let style = _detect_heading_style(line, next_line)
                   | if (style != "none"): {line: line_num, style: style, text: to_text(head)} else: None
                 end
 
@@ -192,10 +194,65 @@ def md003(md, lines, config):
       end
 end
 
+# Helper function to detect list marker style from a line
+def _detect_list_marker(line):
+  let trimmed = trim(line)
+  | if (is_empty(trimmed)): "none"
+    elif (regex_match(trimmed, "^- .+")):
+      "dash"
+    elif (regex_match(trimmed, "^\\* .+")):
+      "asterisk"
+    elif (regex_match(trimmed, "^\\+ .+")):
+      "plus"
+    else: "none"
+end
+
 # MD004: Unordered list style
-# TODO: Implement unordered list style consistency check
-# Requires access to raw markdown text to detect list markers (-, *, +)
-def md004(content): []
+def md004(md, lines, config):
+  let rule_config = get_rule_config(config, "md004")
+  | let expected_style = try: rule_config["style"] catch: "consistent"
+  | let list_items = do md | .list | compact();
+  | if (is_empty(list_items)): []
+    else:
+      do
+        # Detect all list marker styles from raw lines
+        let list_info = do
+                  foreach (i, range(0, len(lines) - 1, 1)):
+                            let line = lines[i]
+                            | let marker = _detect_list_marker(line)
+                            | if (marker != "none"): {line: i + 1, marker: marker} else: None
+                          end | compact()
+                end
+
+        # Determine the target style
+        | let target_style = if (expected_style == "consistent"):
+                  if (len(list_info) > 0): list_info[0]["marker"] else: "dash"
+                else: expected_style
+
+        # Check each list item for consistency
+        | foreach (info, list_info):
+            let marker = info["marker"]
+            | let line_num = info["line"]
+            | if (expected_style == "consistent" && marker != target_style):
+                {
+                  rule: "MD004",
+                  name: "ul-style",
+                  severity: "error",
+                  message: s"Inconsistent list marker style: expected '${target_style}' but found '${marker}'",
+                  line: line_num,
+                  details: {expected: target_style, found: marker}
+                }
+              elif (expected_style != "consistent" && marker != target_style):
+                {
+                  rule: "MD004",
+                  name: "ul-style",
+                  severity: "error",
+                  message: s"List marker style should be '${target_style}' but found '${marker}'",
+                  line: line_num,
+                  details: {expected: target_style, found: marker}
+                }
+          end | compact()
+      end
 end
 
 # MD005: List item indentation consistency
@@ -531,7 +588,7 @@ def lint_all_with_config(content, config):
   | let md001_issues = if (is_rule_enabled(config, "MD001")): md001(md) else: []
   | let md002_issues = if (is_rule_enabled(config, "MD002")): md002(md, config) else: []
   | let md003_issues = if (is_rule_enabled(config, "MD003")): md003(md, lines, config) else: []
-  | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(md) else: []
+  | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(md, lines, config) else: []
   | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(md) else: []
   | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(md) else: []
   | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(md) else: []
