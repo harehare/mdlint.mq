@@ -436,6 +436,136 @@ def test_md012_multiple_violations():
   | assert_eq(len(result), 2)
 end
 
+# Test data for MD013 - Line length
+def test_md013_short_lines():
+  let config = default_config()
+  | let raw_content = "Short line\nAnother short line\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md013_long_line():
+  let config = default_config()
+  | let raw_content = "This is a very long line that exceeds the default maximum line length of 80 characters\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD013")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md013_custom_line_length():
+  let config = {
+    lint: {
+      rules: ["MD013"],
+      md013: {line_length: 50, code_blocks: true, tables: true, headings: true}
+    }
+  }
+  | let raw_content = "This line is longer than 50 characters but shorter than 80\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md013_code_block_excluded():
+  let config = default_config()
+  | let raw_content = "# Header\n```\nThis is a very long line in a code block that exceeds the default maximum line length\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md013_code_block_included():
+  let config = {
+    lint: {
+      rules: ["MD013"],
+      md013: {line_length: 80, code_blocks: false, tables: true, headings: true}
+    }
+  }
+  | let raw_content = "# Header\n```\nThis is a very long line in a code block that exceeds the default maximum line length\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md013_heading_excluded():
+  let config = {
+    lint: {
+      rules: ["MD013"],
+      md013: {line_length: 80, code_blocks: true, tables: true, headings: false}
+    }
+  }
+  | let raw_content = "# This is a very long heading that exceeds the default maximum line length of 80 characters\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md013_table_excluded():
+  let config = default_config()
+  | let raw_content = "| Column 1 | This is a very long column that exceeds the default maximum line length of 80 characters |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md013(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD014 - Dollar signs in commands
+def test_md014_no_dollar_signs():
+  let config = default_config()
+  | let raw_content = "# Header\n```bash\nls -la\ncd /home\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md014(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md014_dollar_sign_found():
+  let config = default_config()
+  | let raw_content = "# Header\n```bash\n$ ls -la\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md014(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD014")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md014_multiple_dollar_signs():
+  let config = default_config()
+  | let raw_content = "# Header\n```bash\n$ ls -la\n$ cd /home\n$ pwd\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md014(content, lines, config)
+  | assert_eq(len(result), 3)
+  | assert_eq(result[0]["rule"], "MD014")
+end
+
+def test_md014_no_code_block():
+  let config = default_config()
+  | let raw_content = "$ This is not in a code block\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md014(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md014_mixed_commands():
+  let config = default_config()
+  | let raw_content = "```bash\nls -la\n$ pwd\ncd /home\n$ echo test\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md014(content, lines, config)
+  | assert_eq(len(result), 2)
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -695,6 +825,18 @@ run_tests([
   test_case("MD012: Custom maximum", test_md012_custom_maximum),
   test_case("MD012: Custom maximum exceeded", test_md012_custom_maximum_exceeded),
   test_case("MD012: Multiple violations", test_md012_multiple_violations),
+  test_case("MD013: Short lines", test_md013_short_lines),
+  test_case("MD013: Long line", test_md013_long_line),
+  test_case("MD013: Custom line length", test_md013_custom_line_length),
+  test_case("MD013: Code block excluded", test_md013_code_block_excluded),
+  test_case("MD013: Code block included", test_md013_code_block_included),
+  test_case("MD013: Heading excluded", test_md013_heading_excluded),
+  test_case("MD013: Table excluded", test_md013_table_excluded),
+  test_case("MD014: No dollar signs", test_md014_no_dollar_signs),
+  test_case("MD014: Dollar sign found", test_md014_dollar_sign_found),
+  test_case("MD014: Multiple dollar signs", test_md014_multiple_dollar_signs),
+  test_case("MD014: No code block", test_md014_no_code_block),
+  test_case("MD014: Mixed commands", test_md014_mixed_commands),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),

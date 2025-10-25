@@ -11,13 +11,15 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD013", "MD014", "MD024", "MD025", "MD026", "MD033", "MD040"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
         md009: {br_spaces: 2, strict: false},
         md010: {code_blocks: true},
         md012: {maximum: 1},
+        md013: {line_length: 80, code_blocks: true, tables: true, headings: true},
+        md014: {enabled: true},
         md024: {"siblings-only": false},
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
@@ -52,6 +54,8 @@ def merge_config(user_config):
     md009: try: lint_config["md009"] catch: defaults["lint"]["md009"],
     md010: try: lint_config["md010"] catch: defaults["lint"]["md010"],
     md012: try: lint_config["md012"] catch: defaults["lint"]["md012"],
+    md013: try: lint_config["md013"] catch: defaults["lint"]["md013"],
+    md014: try: lint_config["md014"] catch: defaults["lint"]["md014"],
     md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
     md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
     md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
@@ -294,10 +298,10 @@ def md009(md, lines, config):
             | let j = line_length - 1
             | let counting = true
             | let result = foreach (k, range(0, line_length - 1, 1)):
-                let idx = line_length - 1 - k
-                | let char = slice(line, idx, idx + 1)
-                | if (char == " " && counting): 1 else: do let counting = false | 0 end
-              end
+                          let idx = line_length - 1 - k
+                          | let char = slice(line, idx, idx + 1)
+                          | if (char == " " && counting): 1 else: do let counting = false | 0 end
+                        end
             | let trailing_count = len(filter(result, fn(x): x == 1;))
             | if (trailing_count > 0):
                 do
@@ -309,9 +313,9 @@ def md009(md, lines, config):
                         name: "no-trailing-spaces",
                         severity: "warning",
                         message: if (is_line_break && strict):
-                            s"Trailing spaces found (${trailing_count} spaces, strict mode enabled)"
-                          else:
-                            s"Trailing spaces found (${trailing_count} spaces)"
+  s"Trailing spaces found (${trailing_count} spaces, strict mode enabled)"
+else:
+  s"Trailing spaces found (${trailing_count} spaces)"
                         ,
                         line: i + 1,
                         details: {count: trailing_count}
@@ -380,15 +384,15 @@ def md012(md, lines, config):
           do
             # Check if we had too many consecutive blank lines
             let result = if (blank_count > maximum):
-                {
-                  rule: "MD012",
-                  name: "no-multiple-blanks",
-                  severity: "error",
-                  message: s"Multiple consecutive blank lines (${blank_count} blank lines, maximum: ${maximum})",
-                  line: blank_start,
-                  details: {count: blank_count, maximum: maximum}
-                }
-              else: None
+              {
+                rule: "MD012",
+                name: "no-multiple-blanks",
+                severity: "error",
+                message: s"Multiple consecutive blank lines (${blank_count} blank lines, maximum: ${maximum})",
+                line: blank_start,
+                details: {count: blank_count, maximum: maximum}
+              }
+            else: None
             | let blank_count = 0
             | let blank_start = 0
             | result
@@ -397,15 +401,74 @@ def md012(md, lines, config):
 end
 
 # MD013: Line length
-# TODO: Implement line length check
-# Requires access to raw markdown text
-def md013(content): []
+def md013(md, lines, config):
+  let rule_config = get_rule_config(config, "md013")
+  | let line_length = try: rule_config["line_length"] catch: 80
+  | let heading_line_length = try: rule_config["heading_line_length"] catch: line_length
+  | let code_blocks = try: rule_config["code_blocks"] catch: true
+  | let tables = try: rule_config["tables"] catch: true
+  | let headings = try: rule_config["headings"] catch: true
+  | let in_code_block = false
+  | let in_table = false
+  | foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if entering/exiting code block
+      | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+      | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+      # Check if in table (simple detection)
+      | let is_table_line = contains(line, "|")
+      | let in_table = is_table_line
+      # Check if heading
+      | let is_heading = starts_with(trimmed, "#")
+      # Determine if we should check this line
+      | let skip_code = in_code_block && code_blocks
+      | let skip_table = in_table && tables
+      | let skip_heading = is_heading && !headings
+      | let should_check = !skip_code && !skip_table && !skip_heading
+      # Determine maximum length for this line
+      | let max_length = if (is_heading && headings): heading_line_length else: line_length
+      # Check line length
+      | let current_length = len(line)
+      | if (should_check && current_length > max_length):
+          {
+            rule: "MD013",
+            name: "line-length",
+            severity: "warning",
+            message: s"Line too long (${current_length} characters, maximum: ${max_length})",
+            line: i + 1,
+            details: {length: current_length, maximum: max_length}
+          }
+        else: None
+    end | compact()
 end
 
 # MD014: Dollar signs used before commands without showing output
-# TODO: Implement check for dollar signs in code blocks
-# Requires analysis of code block content
-def md014(content): []
+def md014(md, lines, config):
+  let in_code_block = false
+  | foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if entering/exiting code block
+      | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+      | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+      # Check for dollar sign at start of command in code block
+      | if (in_code_block && !is_fence):
+          do
+            let has_dollar = starts_with(trimmed, "$") || starts_with(trimmed, "$ ")
+            | if (has_dollar):
+                {
+                  rule: "MD014",
+                  name: "commands-show-output",
+                  severity: "warning",
+                  message: "Dollar signs used before commands without showing output",
+                  line: i + 1,
+                  details: {}
+                }
+              else: None
+          end
+        else: None
+    end | compact()
 end
 
 # MD018: No space after hash on atx style header
@@ -695,8 +758,8 @@ def lint_all_with_config(content, config):
   | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md, lines, config) else: []
   | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
   | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md, lines, config) else: []
-  | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md) else: []
-  | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md) else: []
+  | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md, lines, config) else: []
+  | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md, lines, config) else: []
   | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md) else: []
   | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(md) else: []
   | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(md) else: []
