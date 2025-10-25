@@ -11,10 +11,12 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD024", "MD025", "MD026", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD024", "MD025", "MD026", "MD033", "MD040"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
+        md009: {br_spaces: 2, strict: false},
+        md010: {code_blocks: true},
         md024: {"siblings-only": false},
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
@@ -46,6 +48,8 @@ def merge_config(user_config):
     md002: try: lint_config["md002"] catch: defaults["lint"]["md002"],
     md003: try: lint_config["md003"] catch: defaults["lint"]["md003"],
     md004: try: lint_config["md004"] catch: defaults["lint"]["md004"],
+    md009: try: lint_config["md009"] catch: defaults["lint"]["md009"],
+    md010: try: lint_config["md010"] catch: defaults["lint"]["md010"],
     md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
     md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
     md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
@@ -274,15 +278,79 @@ def md007(content): []
 end
 
 # MD009: Trailing spaces
-# TODO: Implement trailing spaces check
-# Requires access to raw markdown text to detect line endings
-def md009(content): []
+def md009(md, lines, config):
+  let rule_config = get_rule_config(config, "md009")
+  | let br_spaces = try: rule_config["br_spaces"] catch: 2
+  | let strict = try: rule_config["strict"] catch: false
+  | foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let line_length = len(line)
+      | if (line_length > 0):
+          do
+            # Count trailing spaces
+            let trailing_count = 0
+            | let j = line_length - 1
+            | let counting = true
+            | let result = foreach (k, range(0, line_length - 1, 1)):
+                let idx = line_length - 1 - k
+                | let char = slice(line, idx, idx + 1)
+                | if (char == " " && counting): 1 else: do let counting = false | 0 end
+              end
+            | let trailing_count = len(filter(result, fn(x): x == 1;))
+            | if (trailing_count > 0):
+                do
+                  # Check if it's intentional line break (br_spaces)
+                  let is_line_break = trailing_count == br_spaces
+                  | if (strict || !is_line_break):
+                      {
+                        rule: "MD009",
+                        name: "no-trailing-spaces",
+                        severity: "warning",
+                        message: if (is_line_break && strict):
+                            s"Trailing spaces found (${trailing_count} spaces, strict mode enabled)"
+                          else:
+                            s"Trailing spaces found (${trailing_count} spaces)"
+                        ,
+                        line: i + 1,
+                        details: {count: trailing_count}
+                      }
+                    else: None
+                end
+              else: None
+          end
+    end | compact()
 end
 
 # MD010: Hard tabs
-# TODO: Implement hard tabs check
-# Requires access to raw markdown text to detect tab characters
-def md010(content): []
+def md010(md, lines, config):
+  let rule_config = get_rule_config(config, "md010")
+  | let code_blocks = try: rule_config["code_blocks"] catch: true
+  | let in_code_block = false
+  | foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if entering/exiting code block
+      | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+      | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+      # Check for tabs
+      | let has_tab = contains(line, "\t")
+      | if (has_tab):
+          do
+            # Skip if in code block and code_blocks is true
+            let should_report = if (code_blocks && in_code_block): false else: true
+            | if (should_report):
+                {
+                  rule: "MD010",
+                  name: "no-hard-tabs",
+                  severity: "error",
+                  message: "Hard tabs found",
+                  line: i + 1,
+                  details: {}
+                }
+              else: None
+          end
+        else: None
+    end | compact()
 end
 
 # MD011: Reversed link syntax
@@ -592,8 +660,8 @@ def lint_all_with_config(content, config):
   | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(md) else: []
   | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(md) else: []
   | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(md) else: []
-  | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md) else: []
-  | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md) else: []
+  | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md, lines, config) else: []
+  | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md, lines, config) else: []
   | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
   | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md) else: []
   | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md) else: []

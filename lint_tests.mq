@@ -231,6 +231,141 @@ def test_md004_enforce_plus_style():
   | assert_eq(result[0]["details"]["found"], "dash")
 end
 
+# Test data for MD009 - Trailing spaces
+def test_md009_no_trailing_spaces():
+  let config = default_config()
+  | let raw_content = "Line 1\nLine 2\nLine 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md009(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md009_single_trailing_space():
+  let config = default_config()
+  | let raw_content = "Line 1 \nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md009(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD009")
+  | assert_eq(result[0]["severity"], "warning")
+  | assert_eq(result[0]["details"]["count"], 1)
+end
+
+def test_md009_multiple_trailing_spaces():
+  let config = default_config()
+  | let raw_content = "Line 1   \nLine 2    \n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md009(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD009")
+end
+
+def test_md009_line_break_spaces_allowed():
+  let config = default_config()
+  | let raw_content = "Line 1  \nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md009(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md009_strict_mode():
+  let config = {
+    lint: {
+      rules: ["MD009"],
+      md009: {br_spaces: 2, strict: true}
+    }
+  }
+  | let raw_content = "Line 1  \nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md009(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD009")
+end
+
+def test_md009_custom_br_spaces():
+  let config = {
+    lint: {
+      rules: ["MD009"],
+      md009: {br_spaces: 3, strict: false}
+    }
+  }
+  | let raw_content = "Line 1   \nLine 2  \n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md009(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["count"], 2)
+end
+
+# Test data for MD010 - Hard tabs
+def test_md010_no_tabs():
+  let config = default_config()
+  | let raw_content = "Line 1\nLine 2\nLine 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md010(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md010_tabs_found():
+  let config = default_config()
+  | let raw_content = "Line 1\tWith Tab\nLine 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md010(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD010")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md010_multiple_tabs():
+  let config = default_config()
+  | let raw_content = "Line 1\tTab\nLine 2\tAnother Tab\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md010(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD010")
+end
+
+def test_md010_tabs_in_code_block_allowed():
+  let config = default_config()
+  | let raw_content = "# Header\n```\n\tCode with tab\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md010(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md010_tabs_in_code_block_strict():
+  let config = {
+    lint: {
+      rules: ["MD010"],
+      md010: {code_blocks: false}
+    }
+  }
+  | let raw_content = "# Header\n```\n\tCode with tab\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md010(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD010")
+end
+
+def test_md010_tabs_outside_code_block():
+  let config = default_config()
+  | let raw_content = "\tTab before code\n```\n\tCode with tab\n```\n\tTab after code\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md010(content, lines, config)
+  | assert_eq(len(result), 2)
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -472,6 +607,18 @@ run_tests([
   test_case("MD004: Enforce dash style", test_md004_enforce_dash_style),
   test_case("MD004: Enforce asterisk style", test_md004_enforce_asterisk_style),
   test_case("MD004: Enforce plus style", test_md004_enforce_plus_style),
+  test_case("MD009: No trailing spaces", test_md009_no_trailing_spaces),
+  test_case("MD009: Single trailing space", test_md009_single_trailing_space),
+  test_case("MD009: Multiple trailing spaces", test_md009_multiple_trailing_spaces),
+  test_case("MD009: Line break spaces allowed", test_md009_line_break_spaces_allowed),
+  test_case("MD009: Strict mode", test_md009_strict_mode),
+  test_case("MD009: Custom br_spaces", test_md009_custom_br_spaces),
+  test_case("MD010: No tabs", test_md010_no_tabs),
+  test_case("MD010: Tabs found", test_md010_tabs_found),
+  test_case("MD010: Multiple tabs", test_md010_multiple_tabs),
+  test_case("MD010: Tabs in code block allowed", test_md010_tabs_in_code_block_allowed),
+  test_case("MD010: Tabs in code block strict", test_md010_tabs_in_code_block_strict),
+  test_case("MD010: Tabs outside code block", test_md010_tabs_outside_code_block),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),
