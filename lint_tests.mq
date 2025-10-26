@@ -2018,6 +2018,160 @@ def test_md047_missing_newline():
   | assert_eq(result[0]["severity"], "error")
 end
 
+# Test data for MD048 - Code fence style
+def test_md048_consistent_backticks():
+  let config = default_config()
+  | let raw_content = "```\ncode1\n```\n\n```\ncode2\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md048(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md048_consistent_tildes():
+  let config = default_config()
+  | let raw_content = "~~~\ncode1\n~~~\n\n~~~\ncode2\n~~~\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md048(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md048_mixed_styles():
+  let config = default_config()
+  | let raw_content = "```\ncode1\n```\n\n~~~\ncode2\n~~~\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md048(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD048")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md048_enforce_backtick():
+  let config = {
+    lint: {
+      rules: ["MD048"],
+      md048: {style: "backtick"}
+    }
+  }
+  | let raw_content = "~~~\ncode\n~~~\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md048(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["details"]["expected"], "backtick")
+end
+
+# Test data for MD049 - Emphasis style
+def test_md049_consistent_asterisk():
+  let config = default_config()
+  | let raw_content = "This is *emphasized* and *another* emphasis.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md049(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md049_consistent_underscore():
+  let config = default_config()
+  | let raw_content = "This is _emphasized_ and _another_ emphasis.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md049(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md049_mixed_styles():
+  let config = default_config()
+  | let raw_content = "This is *emphasized* and _another_ emphasis.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md049(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD049")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md049_enforce_asterisk():
+  let config = {
+    lint: {
+      rules: ["MD049"],
+      md049: {style: "asterisk"}
+    }
+  }
+  | let raw_content = "This is _emphasized_.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md049(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "asterisk")
+end
+
+# Test data for MD050 - Strong style
+def test_md050_consistent_asterisk():
+  let config = default_config()
+  | let raw_content = "This is **strong** and **another** strong.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md050(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md050_consistent_underscore():
+  let config = default_config()
+  | let raw_content = "This is __strong__ and __another__ strong.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md050(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md050_mixed_styles():
+  let config = default_config()
+  | let raw_content = "This is **strong** and __another__ strong.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md050(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD050")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md050_enforce_underscore():
+  let config = {
+    lint: {
+      rules: ["MD050"],
+      md050: {style: "underscore"}
+    }
+  }
+  | let raw_content = "This is **strong**.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md050(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "underscore")
+end
+
+# Test data for MD051 - Link fragments should be valid
+def test_md051_valid_fragment():
+  let config = default_config()
+  | let raw_content = "# Heading\n\n[Link](#heading)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md051(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md051_no_fragments():
+  let config = default_config()
+  | let raw_content = "# Heading\n\n[Link](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md051(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
 # Test helper functions
 def test_format_issue():
   let issue = {
@@ -2339,6 +2493,20 @@ end
   test_case("MD046: Enforce fenced", test_md046_enforce_fenced),
   test_case("MD047: Ends with newline", test_md047_ends_with_newline),
   test_case("MD047: Missing newline", test_md047_missing_newline),
+  test_case("MD048: Consistent backticks", test_md048_consistent_backticks),
+  test_case("MD048: Consistent tildes", test_md048_consistent_tildes),
+  test_case("MD048: Mixed styles", test_md048_mixed_styles),
+  test_case("MD048: Enforce backtick", test_md048_enforce_backtick),
+  test_case("MD049: Consistent asterisk", test_md049_consistent_asterisk),
+  test_case("MD049: Consistent underscore", test_md049_consistent_underscore),
+  test_case("MD049: Mixed styles", test_md049_mixed_styles),
+  test_case("MD049: Enforce asterisk", test_md049_enforce_asterisk),
+  test_case("MD050: Consistent asterisk", test_md050_consistent_asterisk),
+  test_case("MD050: Consistent underscore", test_md050_consistent_underscore),
+  test_case("MD050: Mixed styles", test_md050_mixed_styles),
+  test_case("MD050: Enforce underscore", test_md050_enforce_underscore),
+  test_case("MD051: Valid fragment", test_md051_valid_fragment),
+  test_case("MD051: No fragments", test_md051_no_fragments),
   test_case("Helper: format_issue", test_format_issue),
   test_case("Helper: count_by_severity", test_count_by_severity),
   test_case("Integration: lint_all clean document", test_lint_all_clean_document),

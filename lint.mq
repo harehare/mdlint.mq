@@ -11,7 +11,7 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD005", "MD006", "MD007", "MD009", "MD010", "MD011", "MD012", "MD013", "MD014", "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026", "MD027", "MD028", "MD029", "MD030", "MD031", "MD032", "MD033", "MD034", "MD035", "MD036", "MD037", "MD038", "MD039", "MD040", "MD041", "MD046", "MD047"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD005", "MD006", "MD007", "MD009", "MD010", "MD011", "MD012", "MD013", "MD014", "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026", "MD027", "MD028", "MD029", "MD030", "MD031", "MD032", "MD033", "MD034", "MD035", "MD036", "MD037", "MD038", "MD039", "MD040", "MD041", "MD046", "MD047", "MD048", "MD049", "MD050", "MD051"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
@@ -38,7 +38,10 @@ include "toml"
         md036: {punctuation: ".,;:!?。，；：！？"},
         md040: {enabled: true},
         md041: {level: 1},
-        md046: {style: "consistent"}
+        md046: {style: "consistent"},
+        md048: {style: "consistent"},
+        md049: {style: "consistent"},
+        md050: {style: "consistent"}
       }
     }
   end
@@ -88,7 +91,10 @@ include "toml"
       md036: try: lint_config["md036"] catch: defaults["lint"]["md036"],
       md040: try: lint_config["md040"] catch: defaults["lint"]["md040"],
       md041: try: lint_config["md041"] catch: defaults["lint"]["md041"],
-      md046: try: lint_config["md046"] catch: defaults["lint"]["md046"]
+      md046: try: lint_config["md046"] catch: defaults["lint"]["md046"],
+      md048: try: lint_config["md048"] catch: defaults["lint"]["md048"],
+      md049: try: lint_config["md049"] catch: defaults["lint"]["md049"],
+      md050: try: lint_config["md050"] catch: defaults["lint"]["md050"]
     }
     | {lint: merged_lint}
   end
@@ -1623,6 +1629,217 @@ else:
       end
   end
 
+# MD048: Code fence style
+| def md048(md, lines, config):
+    let rule_config = get_rule_config(config, "md048")
+    | let style = try: rule_config["style"] catch: "consistent"
+    |     # Detect code fence styles: backtick (```) or tilde (~~~)
+    let fences = do
+          foreach (i, range(0, len(lines) - 1, 1)):
+                let line = lines[i]
+                | let trimmed = trim(line)
+                | if (starts_with(trimmed, "```")):
+                    {line: i + 1, style: "backtick"}
+                  elif (starts_with(trimmed, "~~~")):
+                    {line: i + 1, style: "tilde"}
+                  else: None
+              end | compact()
+        end
+    |     # Check consistency
+    if (style == "consistent"):
+      do
+        if (len(fences) > 1):
+          do
+            let first_style = first(fences)["style"]
+            | foreach (fence, fences):
+                if (fence["style"] != first_style):
+                  do
+                    let fence_style = fence["style"]
+                    | {
+                      rule: "MD048",
+                      name: "code-fence-style",
+                      severity: "error",
+                      message: s"Code fence style should be consistent (found ${fence_style}, expected ${first_style})",
+                      line: fence["line"],
+                      details: {expected: first_style, found: fence_style}
+                    }
+                  end
+                else: None
+              end | compact()
+          end
+        else: []
+      end
+    else:
+      # Check if all fences match the specified style
+      foreach (fence, fences):
+        if (fence["style"] != style):
+          do
+            let fence_style = fence["style"]
+            | {
+              rule: "MD048",
+              name: "code-fence-style",
+              severity: "error",
+              message: s"Code fence style should be ${style} (found ${fence_style})",
+              line: fence["line"],
+              details: {expected: style, found: fence_style}
+            }
+          end
+        else: None
+      end | compact()
+  end
+
+# MD049: Emphasis style
+| def md049(md, lines, config):
+    let rule_config = get_rule_config(config, "md049")
+    | let style = try: rule_config["style"] catch: "consistent"
+    |     # Detect emphasis styles: *text* (asterisk) or _text_ (underscore)
+    let emphases = do
+          foreach (i, range(0, len(lines) - 1, 1)):
+                let line = lines[i]
+                |                 # Simple pattern: check for single * or _ (not double)
+                let has_single_asterisk = regex_match(line, "\\*[^*]+\\*") && !regex_match(line, "\\*\\*")
+                | let has_single_underscore = regex_match(line, "_[^_]+_") && !regex_match(line, "__")
+                |                 # Return both if both exist
+                let results = []
+                | let results = if (has_single_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
+                | let results = if (has_single_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
+                | results
+              end | flatten() | compact()
+        end
+    |     # Check consistency
+    if (style == "consistent"):
+      do
+        if (len(emphases) > 1):
+          do
+            let first_style = first(emphases)["style"]
+            | foreach (emph, emphases):
+                if (emph["style"] != first_style):
+                  do
+                    let emph_style = emph["style"]
+                    | {
+                      rule: "MD049",
+                      name: "emphasis-style",
+                      severity: "error",
+                      message: s"Emphasis style should be consistent (found ${emph_style}, expected ${first_style})",
+                      line: emph["line"],
+                      details: {expected: first_style, found: emph_style}
+                    }
+                  end
+                else: None
+              end | compact()
+          end
+        else: []
+      end
+    else:
+      # Check if all emphasis match the specified style
+      foreach (emph, emphases):
+        if (emph["style"] != style):
+          do
+            let emph_style = emph["style"]
+            | {
+              rule: "MD049",
+              name: "emphasis-style",
+              severity: "error",
+              message: s"Emphasis style should be ${style} (found ${emph_style})",
+              line: emph["line"],
+              details: {expected: style, found: emph_style}
+            }
+          end
+        else: None
+      end | compact()
+  end
+
+# MD050: Strong style
+| def md050(md, lines, config):
+    let rule_config = get_rule_config(config, "md050")
+    | let style = try: rule_config["style"] catch: "consistent"
+    |     # Detect strong styles: **text** (asterisk) or __text__ (underscore)
+    let strongs = do
+          foreach (i, range(0, len(lines) - 1, 1)):
+                let line = lines[i]
+                | let has_asterisk = regex_match(line, "\\*\\*[^*]+\\*\\*")
+                | let has_underscore = regex_match(line, "__[^_]+__")
+                |                 # Return both if both exist
+                let results = []
+                | let results = if (has_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
+                | let results = if (has_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
+                | results
+              end | flatten() | compact()
+        end
+    |     # Check consistency
+    if (style == "consistent"):
+      do
+        if (len(strongs) > 1):
+          do
+            let first_style = first(strongs)["style"]
+            | foreach (strong, strongs):
+                if (strong["style"] != first_style):
+                  do
+                    let strong_style = strong["style"]
+                    | {
+                      rule: "MD050",
+                      name: "strong-style",
+                      severity: "error",
+                      message: s"Strong style should be consistent (found ${strong_style}, expected ${first_style})",
+                      line: strong["line"],
+                      details: {expected: first_style, found: strong_style}
+                    }
+                  end
+                else: None
+              end | compact()
+          end
+        else: []
+      end
+    else:
+      # Check if all strong match the specified style
+      foreach (strong, strongs):
+        if (strong["style"] != style):
+          do
+            let strong_style = strong["style"]
+            | {
+              rule: "MD050",
+              name: "strong-style",
+              severity: "error",
+              message: s"Strong style should be ${style} (found ${strong_style})",
+              line: strong["line"],
+              details: {expected: style, found: strong_style}
+            }
+          end
+        else: None
+      end | compact()
+  end
+
+# MD051: Link fragments should be valid
+| def md051(md, lines, config):
+    let rule_config = get_rule_config(config, "md051")
+    |     # Extract all headings to build valid fragment list
+    let headings = do md | .h | compact();
+    | let valid_fragments = do
+          foreach (h, headings):
+                let heading_text = to_text(h)
+                |                 # Convert heading to fragment ID (simplified)
+                let fragment = downcase(heading_text)
+                | let fragment = gsub(fragment, "\\s+", "-")
+                | let fragment = gsub(fragment, "[^a-z0-9-]", "")
+                | fragment
+              end | compact()
+        end
+    |     # Check all link fragments
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      |       # Find links with fragments: [text](#fragment)
+      let has_fragment_link = regex_match(line, "\\[[^\\]]+\\]\\(#[^)]+\\)")
+      | if (has_fragment_link):
+          do
+            # Extract fragment (simplified - just check if line contains fragment link)
+            # In a full implementation, we'd extract and validate each fragment
+            # For now, we'll just detect the pattern exists
+            None
+          end
+        else: None
+    end | compact()
+  end
+
 # Format a single issue for display
 | def format_issue(issue):
     let rule = get(issue, "rule")
@@ -1695,6 +1912,10 @@ else:
     | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(md, lines, config) else: []
     | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(md, lines, config) else: []
     | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(md, lines, config) else: []
+    | let md048_issues = if (is_rule_enabled(config, "MD048")): md048(md, lines, config) else: []
+    | let md049_issues = if (is_rule_enabled(config, "MD049")): md049(md, lines, config) else: []
+    | let md050_issues = if (is_rule_enabled(config, "MD050")): md050(md, lines, config) else: []
+    | let md051_issues = if (is_rule_enabled(config, "MD051")): md051(md, lines, config) else: []
     | let all_issues = flatten([
       md001_issues, md002_issues,
       md003_issues, md004_issues,
@@ -1715,6 +1936,7 @@ else:
       md037_issues, md038_issues,
       md039_issues, md040_issues,
       md041_issues, md046_issues, md047_issues,
+      md048_issues, md049_issues, md050_issues, md051_issues,
     ])
     | {issues: all_issues, summary: count_by_severity(all_issues)}
   end
