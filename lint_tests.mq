@@ -762,6 +762,116 @@ def test_md021_multiple_violations():
   | assert_eq(len(result), 3)
 end
 
+# Test data for MD022 - Headers should be surrounded by blank lines
+def test_md022_proper_blank_lines():
+  let config = default_config()
+  | let raw_content = "# Header 1\n\nSome text\n\n## Header 2\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md022_missing_blank_above():
+  let config = default_config()
+  | let raw_content = "Some text\n# Header\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD022")
+  | assert_eq(result[0]["details"]["position"], "above")
+end
+
+def test_md022_missing_blank_below():
+  let config = default_config()
+  | let raw_content = "# Header\nSome text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD022")
+  | assert_eq(result[0]["details"]["position"], "below")
+end
+
+def test_md022_first_line_ok():
+  let config = default_config()
+  | let raw_content = "# Header\n\nSome text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md022_setext_style():
+  let config = default_config()
+  | let raw_content = "Some text\n\nHeader\n======\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md022_setext_missing_blank():
+  let config = default_config()
+  | let raw_content = "Some text\nHeader\n======\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD022")
+end
+
+# Test data for MD023 - Headers must start at the beginning of the line
+def test_md023_no_indentation():
+  let config = default_config()
+  | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md023(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md023_indented_atx_header():
+  let config = default_config()
+  | let raw_content = " # Indented Header\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md023(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD023")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md023_tab_indented_header():
+  let config = default_config()
+  | let raw_content = "\t# Tab Indented Header\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md023(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD023")
+end
+
+def test_md023_indented_setext_header():
+  let config = default_config()
+  | let raw_content = " Header\n======\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md023(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD023")
+end
+
+def test_md023_multiple_indented_headers():
+  let config = default_config()
+  | let raw_content = " # Header 1\n  ## Header 2\n   ### Header 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md023(content, lines, config)
+  | assert_eq(len(result), 3)
+end
+
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
   let config = default_config()
@@ -819,6 +929,258 @@ def test_md026_trailing_question():
   | let result = md026(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD026")
+end
+
+# Test data for MD027 - Multiple spaces after blockquote symbol
+def test_md027_single_space():
+  let config = default_config()
+  | let raw_content = "> This is a blockquote\n> Another line\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md027_multiple_spaces():
+  let config = default_config()
+  | let raw_content = ">  Two spaces after symbol\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD027")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md027_three_spaces():
+  let config = default_config()
+  | let raw_content = ">   Three spaces after symbol\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD027")
+end
+
+def test_md027_mixed_blockquotes():
+  let config = default_config()
+  | let raw_content = "> Good blockquote\n>  Bad blockquote\n> Another good one\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md027_multiple_violations():
+  let config = default_config()
+  | let raw_content = ">  Bad 1\n>  Bad 2\n>   Bad 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 3)
+end
+
+def test_md027_nested_blockquotes():
+  let config = default_config()
+  | let raw_content = "> Level 1\n>> Level 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md027_no_space_after_symbol():
+  let config = default_config()
+  | let raw_content = ">No space after symbol\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md027(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD028 - Blank line inside blockquote
+def test_md028_no_blank_lines():
+  let config = default_config()
+  | let raw_content = "> Quote line 1\n> Quote line 2\n> Quote line 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md028_blank_with_marker():
+  let config = default_config()
+  | let raw_content = "> Quote line 1\n>\n> Quote line 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md028_blank_line_violation():
+  let config = default_config()
+  | let raw_content = "> Quote line 1\n\n> Quote line 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD028")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md028_text_between_blockquotes():
+  let config = default_config()
+  | let raw_content = "> Quote 1\n\nSome text\n\n> Quote 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md028_multiple_violations():
+  let config = default_config()
+  | let raw_content = "> Quote 1\n\n> Quote 2\n\n> Quote 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD028")
+  | assert_eq(result[1]["rule"], "MD028")
+end
+
+def test_md028_single_blockquote():
+  let config = default_config()
+  | let raw_content = "> This is a single blockquote\n> with multiple lines\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md028_nested_blockquote():
+  let config = default_config()
+  | let raw_content = "> Level 1\n>> Level 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md028(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD029 - Ordered list item prefix
+def test_md029_one_style():
+  let config = {
+    lint: {
+      rules: ["MD029"],
+      md029: {style: "one"}
+    }
+  }
+  | let raw_content = "1. First item\n1. Second item\n1. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md029_ordered_style():
+  let config = {
+    lint: {
+      rules: ["MD029"],
+      md029: {style: "ordered"}
+    }
+  }
+  | let raw_content = "1. First item\n2. Second item\n3. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md029_zero_style():
+  let config = {
+    lint: {
+      rules: ["MD029"],
+      md029: {style: "zero"}
+    }
+  }
+  | let raw_content = "0. First item\n0. Second item\n0. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md029_one_or_ordered_accepts_one():
+  let config = default_config()
+  | let raw_content = "1. First item\n1. Second item\n1. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md029_one_or_ordered_accepts_ordered():
+  let config = default_config()
+  | let raw_content = "1. First item\n2. Second item\n3. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md029_one_style_violation():
+  let config = {
+    lint: {
+      rules: ["MD029"],
+      md029: {style: "one"}
+    }
+  }
+  | let raw_content = "1. First item\n2. Second item\n3. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD029")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md029_ordered_style_violation():
+  let config = {
+    lint: {
+      rules: ["MD029"],
+      md029: {style: "ordered"}
+    }
+  }
+  | let raw_content = "1. First item\n1. Second item\n1. Third item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["rule"], "MD029")
+end
+
+def test_md029_skip_code_blocks():
+  let config = default_config()
+  | let raw_content = "1. First item\n```\n2. Code example\n```\n2. Second item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md029_wrong_sequence():
+  let config = {
+    lint: {
+      rules: ["MD029"],
+      md029: {style: "ordered"}
+    }
+  }
+  | let raw_content = "1. First\n3. Third (skipped 2)\n4. Fourth\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md029(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["details"]["expected"], 2)
+  | assert_eq(result[0]["details"]["actual"], 3)
 end
 
 # Test data for MD033 - Inline HTML
@@ -1053,6 +1415,17 @@ run_tests([
   test_case("MD021: Multiple spaces before closing", test_md021_multiple_spaces_before_closing),
   test_case("MD021: Multiple spaces both sides", test_md021_multiple_spaces_both_sides),
   test_case("MD021: Multiple violations", test_md021_multiple_violations),
+  test_case("MD022: Proper blank lines", test_md022_proper_blank_lines),
+  test_case("MD022: Missing blank above", test_md022_missing_blank_above),
+  test_case("MD022: Missing blank below", test_md022_missing_blank_below),
+  test_case("MD022: First line OK", test_md022_first_line_ok),
+  test_case("MD022: Setext style", test_md022_setext_style),
+  test_case("MD022: Setext missing blank", test_md022_setext_missing_blank),
+  test_case("MD023: No indentation", test_md023_no_indentation),
+  test_case("MD023: Indented ATX header", test_md023_indented_atx_header),
+  test_case("MD023: Tab indented header", test_md023_tab_indented_header),
+  test_case("MD023: Indented setext header", test_md023_indented_setext_header),
+  test_case("MD023: Multiple indented headers", test_md023_multiple_indented_headers),
   test_case("MD024: No duplicate headers", test_md024_no_duplicate_headers),
   test_case("MD024: Duplicate headers", test_md024_duplicate_headers),
   test_case("MD025: Single H1", test_md025_single_h1),
@@ -1060,6 +1433,29 @@ run_tests([
   test_case("MD026: No trailing punctuation", test_md026_no_trailing_punctuation),
   test_case("MD026: Trailing period", test_md026_trailing_period),
   test_case("MD026: Trailing question mark", test_md026_trailing_question),
+  test_case("MD027: Single space", test_md027_single_space),
+  test_case("MD027: Multiple spaces", test_md027_multiple_spaces),
+  test_case("MD027: Three spaces", test_md027_three_spaces),
+  test_case("MD027: Mixed blockquotes", test_md027_mixed_blockquotes),
+  test_case("MD027: Multiple violations", test_md027_multiple_violations),
+  test_case("MD027: Nested blockquotes", test_md027_nested_blockquotes),
+  test_case("MD027: No space after symbol", test_md027_no_space_after_symbol),
+  test_case("MD028: No blank lines", test_md028_no_blank_lines),
+  test_case("MD028: Blank with marker", test_md028_blank_with_marker),
+  test_case("MD028: Blank line violation", test_md028_blank_line_violation),
+  test_case("MD028: Text between blockquotes", test_md028_text_between_blockquotes),
+  test_case("MD028: Multiple violations", test_md028_multiple_violations),
+  test_case("MD028: Single blockquote", test_md028_single_blockquote),
+  test_case("MD028: Nested blockquote", test_md028_nested_blockquote),
+  test_case("MD029: One style", test_md029_one_style),
+  test_case("MD029: Ordered style", test_md029_ordered_style),
+  test_case("MD029: Zero style", test_md029_zero_style),
+  test_case("MD029: One or ordered accepts one", test_md029_one_or_ordered_accepts_one),
+  test_case("MD029: One or ordered accepts ordered", test_md029_one_or_ordered_accepts_ordered),
+  test_case("MD029: One style violation", test_md029_one_style_violation),
+  test_case("MD029: Ordered style violation", test_md029_ordered_style_violation),
+  test_case("MD029: Skip code blocks", test_md029_skip_code_blocks),
+  test_case("MD029: Wrong sequence", test_md029_wrong_sequence),
   test_case("MD033: No HTML", test_md033_no_html),
   test_case("MD033: Inline HTML", test_md033_inline_html),
   test_case("MD040: Code with language", test_md040_code_with_language),
