@@ -1183,6 +1183,487 @@ def test_md029_wrong_sequence():
   | assert_eq(result[0]["details"]["actual"], 3)
 end
 
+# Test data for MD030 - Spaces after list markers
+def test_md030_default_single_space():
+  let config = default_config()
+  | let raw_content = "- Item 1\n- Item 2\n1. Item 1\n2. Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md030_ul_two_spaces():
+  let config = default_config()
+  | let raw_content = "-  Item with two spaces\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD030")
+  | assert_eq(result[0]["severity"], "error")
+  | assert_eq(result[0]["details"]["expected"], 1)
+  | assert_eq(result[0]["details"]["actual"], 2)
+end
+
+def test_md030_ol_three_spaces():
+  let config = default_config()
+  | let raw_content = "1.   Item with three spaces\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD030")
+  | assert_eq(result[0]["details"]["expected"], 1)
+  | assert_eq(result[0]["details"]["actual"], 3)
+end
+
+def test_md030_custom_ul_spaces():
+  let config = {
+    lint: {
+      rules: ["MD030"],
+      md030: {ul_single: 2, ol_single: 1, ul_multi: 1, ol_multi: 1}
+    }
+  }
+  | let raw_content = "-  Item with two spaces\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md030_custom_ol_spaces():
+  let config = {
+    lint: {
+      rules: ["MD030"],
+      md030: {ul_single: 1, ol_single: 2, ul_multi: 1, ol_multi: 1}
+    }
+  }
+  | let raw_content = "1.  Item with two spaces\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md030_mixed_violations():
+  let config = default_config()
+  | let raw_content = "-  Two spaces\n*   Three spaces\n1.  Two spaces\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 3)
+end
+
+def test_md030_asterisk_marker():
+  let config = default_config()
+  | let raw_content = "* Item 1\n* Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md030_plus_marker():
+  let config = default_config()
+  | let raw_content = "+ Item 1\n+ Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md030(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD031 - Fenced code blocks should be surrounded by blank lines
+def test_md031_proper_blank_lines():
+  let config = default_config()
+  | let raw_content = "# Header\n\n```\ncode\n```\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md031_missing_blank_above():
+  let config = default_config()
+  | let raw_content = "# Header\n```\ncode\n```\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD031")
+  | assert_eq(result[0]["severity"], "error")
+  | assert_eq(result[0]["details"]["position"], "above")
+end
+
+def test_md031_missing_blank_below():
+  let config = default_config()
+  | let raw_content = "# Header\n\n```\ncode\n```\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD031")
+  | assert_eq(result[0]["details"]["position"], "below")
+end
+
+def test_md031_missing_both_blanks():
+  let config = default_config()
+  | let raw_content = "Header\n```\ncode\n```\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["details"]["position"], "above")
+  | assert_eq(result[1]["details"]["position"], "below")
+end
+
+def test_md031_first_line_ok():
+  let config = default_config()
+  | let raw_content = "```\ncode\n```\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md031_last_line_ok():
+  let config = default_config()
+  | let raw_content = "# Header\n\n```\ncode\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md031_tilde_fence():
+  let config = default_config()
+  | let raw_content = "# Header\n\n~~~\ncode\n~~~\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md031_multiple_code_blocks():
+  let config = default_config()
+  | let raw_content = "# Header\n\n```\ncode1\n```\n\n```\ncode2\n```\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md031(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD032 - Lists should be surrounded by blank lines
+def test_md032_proper_blank_lines():
+  let config = default_config()
+  | let raw_content = "# Header\n\n- Item 1\n- Item 2\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md032_missing_blank_above():
+  let config = default_config()
+  | let raw_content = "# Header\n- Item 1\n- Item 2\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD032")
+  | assert_eq(result[0]["severity"], "error")
+  | assert_eq(result[0]["details"]["position"], "above")
+end
+
+def test_md032_missing_blank_below():
+  let config = default_config()
+  | let raw_content = "# Header\n\n- Item 1\n- Item 2\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD032")
+  | assert_eq(result[0]["details"]["position"], "below")
+end
+
+def test_md032_missing_both_blanks():
+  let config = default_config()
+  | let raw_content = "Header\n- Item 1\n- Item 2\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 2)
+  | assert_eq(result[0]["details"]["position"], "above")
+  | assert_eq(result[1]["details"]["position"], "below")
+end
+
+def test_md032_first_line_ok():
+  let config = default_config()
+  | let raw_content = "- Item 1\n- Item 2\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md032_ordered_list():
+  let config = default_config()
+  | let raw_content = "# Header\n\n1. Item 1\n2. Item 2\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md032_mixed_lists():
+  let config = default_config()
+  | let raw_content = "# Header\n\n- Unordered\n\n1. Ordered\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md032_asterisk_list():
+  let config = default_config()
+  | let raw_content = "# Header\n\n* Item 1\n* Item 2\n\nText\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md032(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD034 - Bare URL used
+def test_md034_no_bare_url():
+  let config = default_config()
+  | let raw_content = "Check out <http://example.com> for more info.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md034(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md034_bare_url_detected():
+  let config = default_config()
+  | let raw_content = "Check out http://example.com for more info.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md034(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD034")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md034_link_syntax_ok():
+  let config = default_config()
+  | let raw_content = "[Example](http://example.com) is great.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md034(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md034_https_bare_url():
+  let config = default_config()
+  | let raw_content = "Visit https://example.com today.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md034(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md034_in_code_block():
+  let config = default_config()
+  | let raw_content = "```\nhttp://example.com\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md034(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md034_inline_code():
+  let config = default_config()
+  | let raw_content = "Use `http://example.com` in your code.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md034(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD035 - Horizontal rule style
+def test_md035_consistent_dashes():
+  let config = default_config()
+  | let raw_content = "---\n\nText\n\n---\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md035(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md035_inconsistent_styles():
+  let config = default_config()
+  | let raw_content = "---\n\nText\n\n***\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md035(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD035")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md035_enforce_dash_style():
+  let config = {
+    lint: {
+      rules: ["MD035"],
+      md035: {style: "---"}
+    }
+  }
+  | let raw_content = "***\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md035(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "---")
+end
+
+def test_md035_enforce_asterisk_style():
+  let config = {
+    lint: {
+      rules: ["MD035"],
+      md035: {style: "***"}
+    }
+  }
+  | let raw_content = "---\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md035(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "***")
+end
+
+def test_md035_underscore_style():
+  let config = default_config()
+  | let raw_content = "___\n\nText\n\n___\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md035(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md035_longer_hr():
+  let config = default_config()
+  | let raw_content = "-----\n\nText\n\n-----\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md035(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD036 - Emphasis used instead of a heading
+def test_md036_bold_as_heading():
+  let config = default_config()
+  | let raw_content = "**Section Title**\n\nSome text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md036(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD036")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md036_italic_as_heading():
+  let config = default_config()
+  | let raw_content = "*Section Title*\n\nSome text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md036(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md036_emphasis_with_punctuation():
+  let config = default_config()
+  | let raw_content = "**Important note.**\n\nSome text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md036(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md036_underscore_bold():
+  let config = default_config()
+  | let raw_content = "__Section Title__\n\nSome text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md036(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md036_inline_emphasis():
+  let config = default_config()
+  | let raw_content = "This is **bold** text in a paragraph.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md036(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD037 - Spaces inside emphasis markers
+def test_md037_no_spaces():
+  let config = default_config()
+  | let raw_content = "This is **bold** text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md037(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md037_spaces_in_bold():
+  let config = default_config()
+  | let raw_content = "This is ** bold ** text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md037(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD037")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md037_spaces_in_italic():
+  let config = default_config()
+  | let raw_content = "This is * italic * text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md037(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md037_spaces_in_underscore_bold():
+  let config = default_config()
+  | let raw_content = "This is __ bold __ text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md037(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md037_spaces_in_underscore_italic():
+  let config = default_config()
+  | let raw_content = "This is _ italic _ text.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md037(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
+def test_md037_multiple_violations():
+  let config = default_config()
+  | let raw_content = "This has ** bold ** and * italic * issues.\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md037(content, lines, config)
+  | assert_eq(len(result), 1)
+end
+
 # Test data for MD033 - Inline HTML
 def test_md033_no_html():
   let config = default_config()
@@ -1344,7 +1825,7 @@ def test_lint_all_with_disabled_rules():
   | assert_eq(total, 1)
 end
 
-run_tests([
+| run_tests([
   test_case("MD001: Valid heading progression", test_md001_valid_heading_progression),
   test_case("MD001: Invalid heading skip", test_md001_invalid_heading_skip),
   test_case("MD002: Valid first header", test_md002_valid_first_header),
@@ -1456,6 +1937,53 @@ run_tests([
   test_case("MD029: Ordered style violation", test_md029_ordered_style_violation),
   test_case("MD029: Skip code blocks", test_md029_skip_code_blocks),
   test_case("MD029: Wrong sequence", test_md029_wrong_sequence),
+  test_case("MD030: Default single space", test_md030_default_single_space),
+  test_case("MD030: UL two spaces", test_md030_ul_two_spaces),
+  test_case("MD030: OL three spaces", test_md030_ol_three_spaces),
+  test_case("MD030: Custom UL spaces", test_md030_custom_ul_spaces),
+  test_case("MD030: Custom OL spaces", test_md030_custom_ol_spaces),
+  test_case("MD030: Mixed violations", test_md030_mixed_violations),
+  test_case("MD030: Asterisk marker", test_md030_asterisk_marker),
+  test_case("MD030: Plus marker", test_md030_plus_marker),
+  test_case("MD031: Proper blank lines", test_md031_proper_blank_lines),
+  test_case("MD031: Missing blank above", test_md031_missing_blank_above),
+  test_case("MD031: Missing blank below", test_md031_missing_blank_below),
+  test_case("MD031: Missing both blanks", test_md031_missing_both_blanks),
+  test_case("MD031: First line OK", test_md031_first_line_ok),
+  test_case("MD031: Last line OK", test_md031_last_line_ok),
+  test_case("MD031: Tilde fence", test_md031_tilde_fence),
+  test_case("MD031: Multiple code blocks", test_md031_multiple_code_blocks),
+  test_case("MD032: Proper blank lines", test_md032_proper_blank_lines),
+  test_case("MD032: Missing blank above", test_md032_missing_blank_above),
+  test_case("MD032: Missing blank below", test_md032_missing_blank_below),
+  test_case("MD032: Missing both blanks", test_md032_missing_both_blanks),
+  test_case("MD032: First line OK", test_md032_first_line_ok),
+  test_case("MD032: Ordered list", test_md032_ordered_list),
+  test_case("MD032: Mixed lists", test_md032_mixed_lists),
+  test_case("MD032: Asterisk list", test_md032_asterisk_list),
+  test_case("MD034: No bare URL", test_md034_no_bare_url),
+  test_case("MD034: Bare URL detected", test_md034_bare_url_detected),
+  test_case("MD034: Link syntax OK", test_md034_link_syntax_ok),
+  test_case("MD034: HTTPS bare URL", test_md034_https_bare_url),
+  test_case("MD034: In code block", test_md034_in_code_block),
+  test_case("MD034: Inline code", test_md034_inline_code),
+  test_case("MD035: Consistent dashes", test_md035_consistent_dashes),
+  test_case("MD035: Inconsistent styles", test_md035_inconsistent_styles),
+  test_case("MD035: Enforce dash style", test_md035_enforce_dash_style),
+  test_case("MD035: Enforce asterisk style", test_md035_enforce_asterisk_style),
+  test_case("MD035: Underscore style", test_md035_underscore_style),
+  test_case("MD035: Longer HR", test_md035_longer_hr),
+  test_case("MD036: Bold as heading", test_md036_bold_as_heading),
+  test_case("MD036: Italic as heading", test_md036_italic_as_heading),
+  test_case("MD036: Emphasis with punctuation", test_md036_emphasis_with_punctuation),
+  test_case("MD036: Underscore bold", test_md036_underscore_bold),
+  test_case("MD036: Inline emphasis", test_md036_inline_emphasis),
+  test_case("MD037: No spaces", test_md037_no_spaces),
+  test_case("MD037: Spaces in bold", test_md037_spaces_in_bold),
+  test_case("MD037: Spaces in italic", test_md037_spaces_in_italic),
+  test_case("MD037: Spaces in underscore bold", test_md037_spaces_in_underscore_bold),
+  test_case("MD037: Spaces in underscore italic", test_md037_spaces_in_underscore_italic),
+  test_case("MD037: Multiple violations", test_md037_multiple_violations),
   test_case("MD033: No HTML", test_md033_no_html),
   test_case("MD033: Inline HTML", test_md033_inline_html),
   test_case("MD040: Code with language", test_md040_code_with_language),

@@ -11,7 +11,7 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD013", "MD014", "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026", "MD027", "MD028", "MD029", "MD033", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD009", "MD010", "MD012", "MD013", "MD014", "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026", "MD027", "MD028", "MD029", "MD030", "MD031", "MD032", "MD033", "MD034", "MD035", "MD036", "MD037", "MD040"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
@@ -30,1136 +30,1437 @@ include "toml"
         md025: {level: 1},
         md026: {punctuation: ".,;:!?"},
         md029: {style: "one_or_ordered"},
+        md030: {ul_single: 1, ol_single: 1, ul_multi: 1, ol_multi: 1},
+        md031: {list_items: true},
         md033: {"allowed-elements": []},
+        md035: {style: "consistent"},
+        md036: {punctuation: ".,;:!?。，；：！？"},
         md040: {enabled: true}
       }
     }
   end
 
 # Load configuration from TOML file
-def load_config(path):
-  try:
-    do
-      let content = read_file(path)
-      | toml_parse(content)
-    end
-  catch:
-    default_config()
-end
+| def load_config(path):
+    try:
+      do
+        let content = read_file(path)
+        | toml_parse(content)
+      end
+    catch:
+      default_config()
+  end
 
 # Merge user config with default config
-def merge_config(user_config):
-  let defaults = default_config()
-  | let lint_config = try: user_config["lint"] catch: {}
-  | let merged_lint = {
-    "output-format": try: lint_config["output-format"] catch: defaults["lint"]["output-format"],
-    quiet: try: lint_config["quiet"] catch: defaults["lint"]["quiet"],
-    rules: try: lint_config["rules"] catch: defaults["lint"]["rules"],
-    md002: try: lint_config["md002"] catch: defaults["lint"]["md002"],
-    md003: try: lint_config["md003"] catch: defaults["lint"]["md003"],
-    md004: try: lint_config["md004"] catch: defaults["lint"]["md004"],
-    md009: try: lint_config["md009"] catch: defaults["lint"]["md009"],
-    md010: try: lint_config["md010"] catch: defaults["lint"]["md010"],
-    md012: try: lint_config["md012"] catch: defaults["lint"]["md012"],
-    md013: try: lint_config["md013"] catch: defaults["lint"]["md013"],
-    md014: try: lint_config["md014"] catch: defaults["lint"]["md014"],
-    md018: try: lint_config["md018"] catch: defaults["lint"]["md018"],
-    md019: try: lint_config["md019"] catch: defaults["lint"]["md019"],
-    md020: try: lint_config["md020"] catch: defaults["lint"]["md020"],
-    md021: try: lint_config["md021"] catch: defaults["lint"]["md021"],
-    md022: try: lint_config["md022"] catch: defaults["lint"]["md022"],
-    md023: try: lint_config["md023"] catch: defaults["lint"]["md023"],
-    md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
-    md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
-    md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
-    md029: try: lint_config["md029"] catch: defaults["lint"]["md029"],
-    md033: try: lint_config["md033"] catch: defaults["lint"]["md033"],
-    md040: try: lint_config["md040"] catch: defaults["lint"]["md040"]
-  }
-  | {lint: merged_lint}
-end
+| def merge_config(user_config):
+    let defaults = default_config()
+    | let lint_config = try: user_config["lint"] catch: {}
+    | let merged_lint = {
+      "output-format": try: lint_config["output-format"] catch: defaults["lint"]["output-format"],
+      quiet: try: lint_config["quiet"] catch: defaults["lint"]["quiet"],
+      rules: try: lint_config["rules"] catch: defaults["lint"]["rules"],
+      md002: try: lint_config["md002"] catch: defaults["lint"]["md002"],
+      md003: try: lint_config["md003"] catch: defaults["lint"]["md003"],
+      md004: try: lint_config["md004"] catch: defaults["lint"]["md004"],
+      md009: try: lint_config["md009"] catch: defaults["lint"]["md009"],
+      md010: try: lint_config["md010"] catch: defaults["lint"]["md010"],
+      md012: try: lint_config["md012"] catch: defaults["lint"]["md012"],
+      md013: try: lint_config["md013"] catch: defaults["lint"]["md013"],
+      md014: try: lint_config["md014"] catch: defaults["lint"]["md014"],
+      md018: try: lint_config["md018"] catch: defaults["lint"]["md018"],
+      md019: try: lint_config["md019"] catch: defaults["lint"]["md019"],
+      md020: try: lint_config["md020"] catch: defaults["lint"]["md020"],
+      md021: try: lint_config["md021"] catch: defaults["lint"]["md021"],
+      md022: try: lint_config["md022"] catch: defaults["lint"]["md022"],
+      md023: try: lint_config["md023"] catch: defaults["lint"]["md023"],
+      md024: try: lint_config["md024"] catch: defaults["lint"]["md024"],
+      md025: try: lint_config["md025"] catch: defaults["lint"]["md025"],
+      md026: try: lint_config["md026"] catch: defaults["lint"]["md026"],
+      md029: try: lint_config["md029"] catch: defaults["lint"]["md029"],
+      md030: try: lint_config["md030"] catch: defaults["lint"]["md030"],
+      md031: try: lint_config["md031"] catch: defaults["lint"]["md031"],
+      md033: try: lint_config["md033"] catch: defaults["lint"]["md033"],
+      md035: try: lint_config["md035"] catch: defaults["lint"]["md035"],
+      md036: try: lint_config["md036"] catch: defaults["lint"]["md036"],
+      md040: try: lint_config["md040"] catch: defaults["lint"]["md040"]
+    }
+    | {lint: merged_lint}
+  end
 
 # Check if a rule is enabled
-def is_rule_enabled(config, rule_name):
-  let rules = config["lint"]["rules"]
-  | contains(rules, rule_name)
-end
+| def is_rule_enabled(config, rule_name):
+    let rules = config["lint"]["rules"]
+    | contains(rules, rule_name)
+  end
 
 # Get rule-specific configuration
-def get_rule_config(config, rule_name):
-  let rule_key = downcase(rule_name)
-  | try: config["lint"][rule_key] catch: {}
-end
+| def get_rule_config(config, rule_name):
+    let rule_key = downcase(rule_name)
+    | try: config["lint"][rule_key] catch: {}
+  end
 
 # MD001: Header levels should only increment by one level at a time
-def md001(content):
-  let headings = do content | .h | compact();
-  | let levels = do map(headings, fn(h): attr(h, "level");) | filter(fn(level): level > 0;);
-  | foreach (i, range(1, len(levels) - 1, 1)):
-      let current = levels[i]
-      | let previous = levels[i - 1]
-      | let diff = current - previous
-      | if (diff > 1):
-          do
-            let heading_node = headings[i]
-            | let heading_text = to_text(heading_node)
-            | let expected_level = previous + 1
-            | {
-              rule: "MD001",
-              name: "heading-increment",
-              severity: "error",
-              message: s"Heading level ${current} skipped (expected level ${expected_level} or lower)",
-              heading: heading_text,
-              line: i + 1,
-              details: {previous_level: previous, current_level: current}
-            }
-          end
-    end | compact() | flatten()
-end
+| def md001(content):
+    let headings = do content | .h | compact();
+    | let levels = do map(headings, fn(h): attr(h, "level");) | filter(fn(level): level > 0;);
+    | foreach (i, range(1, len(levels) - 1, 1)):
+        let current = levels[i]
+        | let previous = levels[i - 1]
+        | let diff = current - previous
+        | if (diff > 1):
+            do
+              let heading_node = headings[i]
+              | let heading_text = to_text(heading_node)
+              | let expected_level = previous + 1
+              | {
+                rule: "MD001",
+                name: "heading-increment",
+                severity: "error",
+                message: s"Heading level ${current} skipped (expected level ${expected_level} or lower)",
+                heading: heading_text,
+                line: i + 1,
+                details: {previous_level: previous, current_level: current}
+              }
+            end
+      end | compact() | flatten()
+  end
 
 # MD002: First header should be a top level header
-def md002(content, config):
-  let rule_config = get_rule_config(config, "md002")
-  | let expected_level = try: rule_config["level"] catch: 1
-  | let headings = do content | .h | compact();
-  | if (is_empty(headings)): []
-    else:
-      do
-        let first_heading = first(headings)
-        | let first_level = attr(first_heading, "level")
-        | if (first_level != expected_level):
-            do
-              let heading_text = to_text(first_heading)
-              | [{
-                rule: "MD002",
-                name: "first-header-h1",
-                severity: "error",
-                message: s"First header should be h${expected_level} (found h${first_level})",
-                heading: heading_text,
-                line: 1,
-                details: {level: first_level, expected: expected_level}
-              }]
-            end
-          else: []
-      end
-end
+| def md002(content, config):
+    let rule_config = get_rule_config(config, "md002")
+    | let expected_level = try: rule_config["level"] catch: 1
+    | let headings = do content | .h | compact();
+    | if (is_empty(headings)): []
+      else:
+        do
+          let first_heading = first(headings)
+          | let first_level = attr(first_heading, "level")
+          | if (first_level != expected_level):
+              do
+                let heading_text = to_text(first_heading)
+                | [{
+                  rule: "MD002",
+                  name: "first-header-h1",
+                  severity: "error",
+                  message: s"First header should be h${expected_level} (found h${first_level})",
+                  heading: heading_text,
+                  line: 1,
+                  details: {level: first_level, expected: expected_level}
+                }]
+              end
+            else: []
+        end
+  end
 
 
-def _detect_heading_style(line, next_line):
-  let trimmed = trim(line)
-  | let next_trimmed = trim(next_line)
-  | if (is_empty(trimmed)): "none"
-    elif (starts_with(trimmed, "#")):
-      do
-        let has_closing_hash = ends_with(trim(trimmed), "#")
-        | if (has_closing_hash): "atx_closed"
-          else: "atx"
-      end
-    elif (!is_empty(next_trimmed)):
-      do
-        # Check for setext style (underlined with = or -)
-        let is_setext_h1 = regex_match(next_trimmed, "^=+$")
-        | let is_setext_h2 = regex_match(next_trimmed, "^-+$")
-        | if (is_setext_h1 || is_setext_h2): "setext"
-          else: "none"
-      end
-    else: "none"
-end
+| def _detect_heading_style(line, next_line):
+    let trimmed = trim(line)
+    | let next_trimmed = trim(next_line)
+    | if (is_empty(trimmed)): "none"
+      elif (starts_with(trimmed, "#")):
+        do
+          let has_closing_hash = ends_with(trim(trimmed), "#")
+          | if (has_closing_hash): "atx_closed"
+            else: "atx"
+        end
+      elif (!is_empty(next_trimmed)):
+        do
+          # Check for setext style (underlined with = or -)
+          let is_setext_h1 = regex_match(next_trimmed, "^=+$")
+          | let is_setext_h2 = regex_match(next_trimmed, "^-+$")
+          | if (is_setext_h1 || is_setext_h2): "setext"
+            else: "none"
+        end
+      else: "none"
+  end
 
 # MD003: Header style consistency
-def md003(md, lines, config):
-  let rule_config = get_rule_config(config, "md003")
-  | let expected_style = try: rule_config["style"] catch: "consistent"
-  | let headings = do md | .h | compact();
-  | if (is_empty(headings)): []
-    else:
-      do
-        # Detect all heading styles
-        let heading_info = foreach (head, headings):
-                  let pos = _get_markdown_position(head)
-                  | let line_num = pos["start_line"]
-                  | let line = if (line_num > 0 && line_num <= len(lines)): lines[line_num - 1] else: ""
-                  | let next_line = if (line_num < len(lines)): lines[line_num] else: ""
-                  | let style = _detect_heading_style(line, next_line)
-                  | if (style != "none"): {line: line_num, style: style, text: to_text(head)} else: None
-                end
+| def md003(md, lines, config):
+    let rule_config = get_rule_config(config, "md003")
+    | let expected_style = try: rule_config["style"] catch: "consistent"
+    | let headings = do md | .h | compact();
+    | if (is_empty(headings)): []
+      else:
+        do
+          # Detect all heading styles
+          let heading_info = foreach (head, headings):
+                      let pos = _get_markdown_position(head)
+                      | let line_num = pos["start_line"]
+                      | let line = if (line_num > 0 && line_num <= len(lines)): lines[line_num - 1] else: ""
+                      | let next_line = if (line_num < len(lines)): lines[line_num] else: ""
+                      | let style = _detect_heading_style(line, next_line)
+                      | if (style != "none"): {line: line_num, style: style, text: to_text(head)} else: None
+                    end
 
-        # Determine the target style
-        | let target_style = if (expected_style == "consistent"):
-                  if (len(heading_info) > 0): heading_info[0]["style"] else: "atx"
-                else: expected_style
+          # Determine the target style
+          | let target_style = if (expected_style == "consistent"):
+                      if (len(heading_info) > 0): heading_info[0]["style"] else: "atx"
+                    else: expected_style
 
-        # Check each heading for consistency
-        | foreach (info, heading_info):
-            let style = info["style"]
-            | let line_num = info["line"]
-            | let heading_text = info["text"]
-            | if (expected_style == "consistent" && style != target_style):
-                {
-                  rule: "MD003",
-                  name: "heading-style",
-                  severity: "error",
-                  message: s"Inconsistent heading style: expected '${target_style}' but found '${style}'",
-                  heading: heading_text,
-                  line: line_num,
-                  details: {expected: target_style, found: style}
-                }
-              elif (expected_style != "consistent" && style != target_style):
-                {
-                  rule: "MD003",
-                  name: "heading-style",
-                  severity: "error",
-                  message: s"Heading style should be '${target_style}' but found '${style}'",
-                  heading: heading_text,
-                  line: line_num,
-                  details: {expected: target_style, found: style}
-                }
-          end | compact()
-      end
-end
+          # Check each heading for consistency
+          | foreach (info, heading_info):
+              let style = info["style"]
+              | let line_num = info["line"]
+              | let heading_text = info["text"]
+              | if (expected_style == "consistent" && style != target_style):
+                  {
+                    rule: "MD003",
+                    name: "heading-style",
+                    severity: "error",
+                    message: s"Inconsistent heading style: expected '${target_style}' but found '${style}'",
+                    heading: heading_text,
+                    line: line_num,
+                    details: {expected: target_style, found: style}
+                  }
+                elif (expected_style != "consistent" && style != target_style):
+                  {
+                    rule: "MD003",
+                    name: "heading-style",
+                    severity: "error",
+                    message: s"Heading style should be '${target_style}' but found '${style}'",
+                    heading: heading_text,
+                    line: line_num,
+                    details: {expected: target_style, found: style}
+                  }
+            end | compact()
+        end
+  end
 
 # Helper function to detect list marker style from a line
-def _detect_list_marker(line):
-  let trimmed = trim(line)
-  | if (is_empty(trimmed)): "none"
-    elif (regex_match(trimmed, "^- .+")):
-      "dash"
-    elif (regex_match(trimmed, "^\\* .+")):
-      "asterisk"
-    elif (regex_match(trimmed, "^\\+ .+")):
-      "plus"
-    else: "none"
-end
+| def _detect_list_marker(line):
+    let trimmed = trim(line)
+    | if (is_empty(trimmed)): "none"
+      elif (regex_match(trimmed, "^- .+")):
+        "dash"
+      elif (regex_match(trimmed, "^\\* .+")):
+        "asterisk"
+      elif (regex_match(trimmed, "^\\+ .+")):
+        "plus"
+      else: "none"
+  end
 
 # MD004: Unordered list style
-def md004(md, lines, config):
-  let rule_config = get_rule_config(config, "md004")
-  | let expected_style = try: rule_config["style"] catch: "consistent"
-  | let list_items = do md | .list | compact();
-  | if (is_empty(list_items)): []
-    else:
-      do
-        # Detect all list marker styles from raw lines
-        let list_info = do
-                  foreach (i, range(0, len(lines) - 1, 1)):
-                            let line = lines[i]
-                            | let marker = _detect_list_marker(line)
-                            | if (marker != "none"): {line: i + 1, marker: marker} else: None
-                          end | compact()
-                end
+| def md004(md, lines, config):
+    let rule_config = get_rule_config(config, "md004")
+    | let expected_style = try: rule_config["style"] catch: "consistent"
+    | let list_items = do md | .list | compact();
+    | if (is_empty(list_items)): []
+      else:
+        do
+          # Detect all list marker styles from raw lines
+          let list_info = do
+                      foreach (i, range(0, len(lines) - 1, 1)):
+                                  let line = lines[i]
+                                  | let marker = _detect_list_marker(line)
+                                  | if (marker != "none"): {line: i + 1, marker: marker} else: None
+                                end | compact()
+                    end
 
-        # Determine the target style
-        | let target_style = if (expected_style == "consistent"):
-                  if (len(list_info) > 0): list_info[0]["marker"] else: "dash"
-                else: expected_style
+          # Determine the target style
+          | let target_style = if (expected_style == "consistent"):
+                      if (len(list_info) > 0): list_info[0]["marker"] else: "dash"
+                    else: expected_style
 
-        # Check each list item for consistency
-        | foreach (info, list_info):
-            let marker = info["marker"]
-            | let line_num = info["line"]
-            | if (expected_style == "consistent" && marker != target_style):
-                {
-                  rule: "MD004",
-                  name: "ul-style",
-                  severity: "error",
-                  message: s"Inconsistent list marker style: expected '${target_style}' but found '${marker}'",
-                  line: line_num,
-                  details: {expected: target_style, found: marker}
-                }
-              elif (expected_style != "consistent" && marker != target_style):
-                {
-                  rule: "MD004",
-                  name: "ul-style",
-                  severity: "error",
-                  message: s"List marker style should be '${target_style}' but found '${marker}'",
-                  line: line_num,
-                  details: {expected: target_style, found: marker}
-                }
-          end | compact()
-      end
-end
+          # Check each list item for consistency
+          | foreach (info, list_info):
+              let marker = info["marker"]
+              | let line_num = info["line"]
+              | if (expected_style == "consistent" && marker != target_style):
+                  {
+                    rule: "MD004",
+                    name: "ul-style",
+                    severity: "error",
+                    message: s"Inconsistent list marker style: expected '${target_style}' but found '${marker}'",
+                    line: line_num,
+                    details: {expected: target_style, found: marker}
+                  }
+                elif (expected_style != "consistent" && marker != target_style):
+                  {
+                    rule: "MD004",
+                    name: "ul-style",
+                    severity: "error",
+                    message: s"List marker style should be '${target_style}' but found '${marker}'",
+                    line: line_num,
+                    details: {expected: target_style, found: marker}
+                  }
+            end | compact()
+        end
+  end
 
 # MD005: List item indentation consistency
 # TODO: Implement list item indentation consistency check
 # Requires access to raw markdown text
-def md005(content): []
-end
+| def md005(content): []
+  end
 
 # MD006: Consider starting bulleted lists at the beginning of the line
 # TODO: Implement check for list starting position
 # Requires access to raw markdown text
-def md006(content): []
-end
+| def md006(content): []
+  end
 
 # MD007: Unordered list indentation
 # TODO: Implement unordered list indentation check
 # Requires access to raw markdown text to detect indentation levels
-def md007(content): []
-end
+| def md007(content): []
+  end
 
 # MD009: Trailing spaces
-def md009(md, lines, config):
-  let rule_config = get_rule_config(config, "md009")
-  | let br_spaces = try: rule_config["br_spaces"] catch: 2
-  | let strict = try: rule_config["strict"] catch: false
-  | foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      | let line_length = len(line)
-      | if (line_length > 0):
-          do
-            # Count trailing spaces
-            let trailing_count = 0
-            | let j = line_length - 1
-            | let counting = true
-            | let result = foreach (k, range(0, line_length - 1, 1)):
-                          let idx = line_length - 1 - k
-                          | let char = slice(line, idx, idx + 1)
-                          | if (char == " " && counting): 1 else: do let counting = false | 0 end
-                        end
-            | let trailing_count = len(filter(result, fn(x): x == 1;))
-            | if (trailing_count > 0):
-                do
-                  # Check if it's intentional line break (br_spaces)
-                  let is_line_break = trailing_count == br_spaces
-                  | if (strict || !is_line_break):
-                      {
-                        rule: "MD009",
-                        name: "no-trailing-spaces",
-                        severity: "warning",
-                        message: if (is_line_break && strict):
+| def md009(md, lines, config):
+    let rule_config = get_rule_config(config, "md009")
+    | let br_spaces = try: rule_config["br_spaces"] catch: 2
+    | let strict = try: rule_config["strict"] catch: false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let line_length = len(line)
+        | if (line_length > 0):
+            do
+              # Count trailing spaces
+              let trailing_count = 0
+              | let j = line_length - 1
+              | let counting = true
+              | let result = foreach (k, range(0, line_length - 1, 1)):
+                              let idx = line_length - 1 - k
+                              | let char = slice(line, idx, idx + 1)
+                              | if (char == " " && counting): 1 else: do let counting = false | 0 end
+                            end
+              | let trailing_count = len(filter(result, fn(x): x == 1;))
+              | if (trailing_count > 0):
+                  do
+                    # Check if it's intentional line break (br_spaces)
+                    let is_line_break = trailing_count == br_spaces
+                    | if (strict || !is_line_break):
+                        {
+                          rule: "MD009",
+                          name: "no-trailing-spaces",
+                          severity: "warning",
+                          message: if (is_line_break && strict):
   s"Trailing spaces found (${trailing_count} spaces, strict mode enabled)"
 else:
   s"Trailing spaces found (${trailing_count} spaces)"
-                        ,
-                        line: i + 1,
-                        details: {count: trailing_count}
+                          ,
+                          line: i + 1,
+                          details: {count: trailing_count}
+                        }
+                      else: None
+                  end
+                else: None
+            end
+      end | compact()
+  end
+
+# MD010: Hard tabs
+| def md010(md, lines, config):
+    let rule_config = get_rule_config(config, "md010")
+    | let code_blocks = try: rule_config["code_blocks"] catch: true
+    | let in_code_block = false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check if entering/exiting code block
+        | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+        | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+        # Check for tabs
+        | let has_tab = contains(line, "\t")
+        | if (has_tab):
+            do
+              # Skip if in code block and code_blocks is true
+              let should_report = if (code_blocks && in_code_block): false else: true
+              | if (should_report):
+                  {
+                    rule: "MD010",
+                    name: "no-hard-tabs",
+                    severity: "error",
+                    message: "Hard tabs found",
+                    line: i + 1,
+                    details: {}
+                  }
+                else: None
+            end
+          else: None
+      end | compact()
+  end
+
+# MD011: Reversed link syntax
+# TODO: Implement check for reversed link syntax
+# Requires analysis of text patterns
+| def md011(content): []
+  end
+
+# MD012: Multiple consecutive blank lines
+| def md012(md, lines, config):
+    let rule_config = get_rule_config(config, "md012")
+    | let maximum = try: rule_config["maximum"] catch: 1
+    | let blank_count = 0
+    | let blank_start = 0
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let is_blank = is_empty(trim(line))
+        | if (is_blank):
+            do
+              let blank_count = blank_count + 1
+              | let blank_start = if (blank_count == 1): i + 1 else: blank_start
+              | None
+            end
+          else:
+            do
+              # Check if we had too many consecutive blank lines
+              let result = if (blank_count > maximum):
+                {
+                  rule: "MD012",
+                  name: "no-multiple-blanks",
+                  severity: "error",
+                  message: s"Multiple consecutive blank lines (${blank_count} blank lines, maximum: ${maximum})",
+                  line: blank_start,
+                  details: {count: blank_count, maximum: maximum}
+                }
+              else: None
+              | let blank_count = 0
+              | let blank_start = 0
+              | result
+            end
+      end | compact()
+  end
+
+# MD013: Line length
+| def md013(md, lines, config):
+    let rule_config = get_rule_config(config, "md013")
+    | let line_length = try: rule_config["line_length"] catch: 80
+    | let heading_line_length = try: rule_config["heading_line_length"] catch: line_length
+    | let code_blocks = try: rule_config["code_blocks"] catch: true
+    | let tables = try: rule_config["tables"] catch: true
+    | let headings = try: rule_config["headings"] catch: true
+    | let in_code_block = false
+    | let in_table = false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check if entering/exiting code block
+        | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+        | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+        # Check if in table (simple detection)
+        | let is_table_line = contains(line, "|")
+        | let in_table = is_table_line
+        # Check if heading
+        | let is_heading = starts_with(trimmed, "#")
+        # Determine if we should check this line
+        | let skip_code = in_code_block && code_blocks
+        | let skip_table = in_table && tables
+        | let skip_heading = is_heading && !headings
+        | let should_check = !skip_code && !skip_table && !skip_heading
+        # Determine maximum length for this line
+        | let max_length = if (is_heading && headings): heading_line_length else: line_length
+        # Check line length
+        | let current_length = len(line)
+        | if (should_check && current_length > max_length):
+            {
+              rule: "MD013",
+              name: "line-length",
+              severity: "warning",
+              message: s"Line too long (${current_length} characters, maximum: ${max_length})",
+              line: i + 1,
+              details: {length: current_length, maximum: max_length}
+            }
+          else: None
+      end | compact()
+  end
+
+# MD014: Dollar signs used before commands without showing output
+| def md014(md, lines, config):
+    let in_code_block = false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check if entering/exiting code block
+        | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+        | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+        # Check for dollar sign at start of command in code block
+        | if (in_code_block && !is_fence):
+            do
+              let has_dollar = starts_with(trimmed, "$") || starts_with(trimmed, "$ ")
+              | if (has_dollar):
+                  {
+                    rule: "MD014",
+                    name: "commands-show-output",
+                    severity: "warning",
+                    message: "Dollar signs used before commands without showing output",
+                    line: i + 1,
+                    details: {}
+                  }
+                else: None
+            end
+          else: None
+      end | compact()
+  end
+
+# MD018: No space after hash on atx style header
+| def md018(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if line starts with # (atx style heading)
+      | if (starts_with(trimmed, "#")):
+          do
+            # Check if there's no space after the hash(es)
+            # Pattern: one or more # followed by a non-space, non-# character
+            let has_no_space = regex_match(trimmed, "^#+[^ #]")
+            | if (has_no_space):
+                {
+                  rule: "MD018",
+                  name: "no-missing-space-atx",
+                  severity: "error",
+                  message: "No space after hash on atx style heading",
+                  line: i + 1,
+                  details: {}
+                }
+              else: None
+          end
+        else: None
+    end | compact()
+  end
+
+# MD019: Multiple spaces after hash on atx style header
+| def md019(md, lines, config):
+    let headings = do md | .h | compact();
+    | foreach (head, headings):
+        let pos = _get_markdown_position(head)
+        | let line = lines[pos["start_line"] - 1]
+        | let trimmed = trim(line)
+        # Check if line starts with # (atx style heading)
+        | if (starts_with(trimmed, "#")):
+            do
+              # Check if there are multiple spaces after the hash(es)
+              # Pattern: one or more # followed by 2 or more spaces
+              let has_multiple_spaces = regex_match(trimmed, "^#+  +")
+              | if (has_multiple_spaces):
+                  {
+                    rule: "MD019",
+                    name: "no-multiple-space-atx",
+                    severity: "error",
+                    message: "Multiple spaces after hash on atx style heading",
+                    line: pos["start_line"],
+                    details: {}
+                  }
+                else: None
+            end
+          else: None
+      end | compact()
+  end
+
+# MD020: No space inside hashes on closed atx style header
+| def md020(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if line is closed atx style (starts and ends with #)
+      | if (starts_with(trimmed, "#") && ends_with(trimmed, "#")):
+          do
+            # Check if there's no space after opening hash(es)
+            let no_space_after = test(trimmed, "^#+[^ #]")
+            # Check if there's no space before closing hash(es)
+            | let no_space_before = test(trimmed, "[^ #]#+$")
+            | if (no_space_after || no_space_before):
+                {
+                  rule: "MD020",
+                  name: "no-missing-space-closed-atx",
+                  severity: "error",
+                  message: "No space inside hashes on closed atx style heading",
+                  line: i + 1,
+                  details: {}
+                }
+              else: None
+          end
+        else: None
+    end | compact()
+  end
+
+# MD021: Multiple spaces inside hashes on closed atx style header
+| def md021(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if line is closed atx style (starts and ends with #)
+      | if (starts_with(trimmed, "#") && ends_with(trimmed, "#")):
+          do
+            # Check if there are multiple spaces after opening hash(es)
+            let multiple_spaces_after = test(trimmed, "^#+  +")
+            # Check if there are multiple spaces before closing hash(es)
+            | let multiple_spaces_before = test(trimmed, "  +#+$")
+            | if (multiple_spaces_after || multiple_spaces_before):
+                {
+                  rule: "MD021",
+                  name: "no-multiple-space-closed-atx",
+                  severity: "error",
+                  message: "Multiple spaces inside hashes on closed atx style heading",
+                  line: i + 1,
+                  details: {}
+                }
+              else: None
+          end
+        else: None
+    end | compact()
+  end
+
+# MD022: Headers should be surrounded by blank lines
+| def md022(md, lines, config):
+    let rule_config = get_rule_config(config, "md022")
+    | let lines_above = try: rule_config["lines_above"] catch: 1
+    | let lines_below = try: rule_config["lines_below"] catch: 1
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        | let next_line = if (i < len(lines) - 1): lines[i + 1] else: ""
+        | let next_trimmed = trim(next_line)
+        # Detect ATX style heading
+        | if (starts_with(trimmed, "#") && !is_empty(trimmed)):
+            do
+              let issues = []
+              # Check line above (skip if first line)
+              | let issues = if (i > 0):
+                              do
+                                              let prev_line = lines[i - 1]
+                                              | let prev_trimmed = trim(prev_line)
+                                              | if (!is_empty(prev_trimmed)):
+                                                  add(issues, {
+                                                    rule: "MD022",
+                                                    name: "blanks-around-headings",
+                                                    severity: "error",
+                                                    message: "Headings should be surrounded by blank lines",
+                                                    line: i + 1,
+                                                    details: {position: "above"}
+                                                  })
+                                                else: issues
+                                            end
+                            else: issues
+              # Check line below (skip if last line)
+              | let issues = if (i < len(lines) - 1):
+                              do
+                                              let next_line = lines[i + 1]
+                                              | let next_trimmed = trim(next_line)
+                                              # Skip if next line is setext underline
+                                              | let is_setext_underline = regex_match(next_trimmed, "^[=\\-]+$")
+                                              | if (!is_empty(next_trimmed) && !is_setext_underline):
+                                                  add(issues, {
+                                                    rule: "MD022",
+                                                    name: "blanks-around-headings",
+                                                    severity: "error",
+                                                    message: "Headings should be surrounded by blank lines",
+                                                    line: i + 1,
+                                                    details: {position: "below"}
+                                                  })
+                                                else: issues
+                                            end
+                            else: issues
+              | issues
+            end
+          # Detect Setext style heading (next line is === or ---)
+          elif (!is_empty(trimmed) && !is_empty(next_trimmed) && regex_match(next_trimmed, "^[=\\-]+$")):
+            do
+              let issues = []
+              # Check line above the heading text (skip if first line)
+              | let issues = if (i > 0):
+                              do
+                                              let prev_line = lines[i - 1]
+                                              | let prev_trimmed = trim(prev_line)
+                                              | if (!is_empty(prev_trimmed)):
+                                                  add(issues, {
+                                                    rule: "MD022",
+                                                    name: "blanks-around-headings",
+                                                    severity: "error",
+                                                    message: "Headings should be surrounded by blank lines",
+                                                    line: i + 1,
+                                                    details: {position: "above"}
+                                                  })
+                                                else: issues
+                                            end
+                            else: issues
+              # Check line below the underline (skip if last line)
+              | let issues = if (i + 1 < len(lines) - 1):
+                              do
+                                              let line_after_underline = lines[i + 2]
+                                              | let after_trimmed = trim(line_after_underline)
+                                              | if (!is_empty(after_trimmed)):
+                                                  add(issues, {
+                                                    rule: "MD022",
+                                                    name: "blanks-around-headings",
+                                                    severity: "error",
+                                                    message: "Headings should be surrounded by blank lines",
+                                                    line: i + 2,
+                                                    details: {position: "below"}
+                                                  })
+                                                else: issues
+                                            end
+                            else: issues
+              | issues
+            end
+          else: []
+      end | flatten() | compact()
+  end
+
+# MD023: Headers must start at the beginning of the line
+| def md023(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      | let next_line = if (i < len(lines) - 1): lines[i + 1] else: ""
+      | let next_trimmed = trim(next_line)
+      # Check if line has leading spaces/tabs
+      | let has_leading_space = starts_with(line, " ") || starts_with(line, "\t")
+      # Check for indented ATX style heading
+      | if (has_leading_space && starts_with(trimmed, "#") && !is_empty(trimmed)):
+          {
+            rule: "MD023",
+            name: "heading-start-left",
+            severity: "error",
+            message: "Headings must start at the beginning of the line",
+            line: i + 1,
+            details: {}
+          }
+        # Check for indented Setext style heading
+        elif (has_leading_space && !is_empty(trimmed) && !is_empty(next_trimmed) && regex_match(next_trimmed, "^[=\\-]+$")):
+          {
+            rule: "MD023",
+            name: "heading-start-left",
+            severity: "error",
+            message: "Headings must start at the beginning of the line",
+            line: i + 1,
+            details: {}
+          }
+        else: None
+    end | compact()
+  end
+
+# MD024: Multiple headers with the same content
+| def md024(content, config):
+    let headings = do content | .h | compact();
+    | let issues = []
+    | let seen = {}
+    | foreach (i, range(0, len(headings) - 1, 1)):
+        let heading = headings[i]
+        | let heading_text = to_text(heading)
+        | if (contains(seen, heading_text)):
+            {
+              rule: "MD024",
+              name: "no-duplicate-header",
+              severity: "warning",
+              message: s"Multiple headers with the same content: '${heading_text}'",
+              heading: heading_text,
+              line: i + 1,
+              details: {duplicate_text: heading_text}
+            }
+          elif (!is_none(heading_text)): do
+              let seen = set(seen, heading_text, true)
+              | None
+            end
+      end | compact()
+  end
+
+# MD025: Multiple top level headers in the same document
+| def md025(content, config):
+    let rule_config = get_rule_config(config, "md025")
+    | let top_level = try: rule_config["level"] catch: 1
+    | let headings = do content | .h | compact();
+    | let h1_headings = filter(headings, fn(h): attr(h, "level") == top_level;)
+    | if (len(h1_headings) > 1):
+        foreach (i, range(1, len(h1_headings) - 1, 1)):
+          let heading_text = to_text(h1_headings[i])
+          | {
+            rule: "MD025",
+            name: "single-h1",
+            severity: "error",
+            message: s"Multiple top level headers found (h${top_level} should be unique)",
+            heading: heading_text,
+            line: i + 1,
+            details: {level: top_level}
+          }
+        end
+      else: []
+  end
+
+# MD026: Trailing punctuation in header
+| def md026(content, config):
+    let rule_config = get_rule_config(config, "md026")
+    | let punctuation = try: rule_config["punctuation"] catch: ".,;:!?"
+    | let headings = do content | .h | compact();
+    | let issues = []
+    | foreach (i, range(0, len(headings) - 1, 1)):
+        let heading = headings[i]
+        | let heading_text = to_text(heading)
+        | let last_char = slice(heading_text, len(heading_text) - 1, len(heading_text))
+        | if (contains(punctuation, last_char)):
+            do
+              {
+                rule: "MD026",
+                name: "no-trailing-punctuation",
+                severity: "warning",
+                message: s"Trailing punctuation in header: '${last_char}'",
+                heading: heading_text,
+                line: i + 1,
+                details: {punctuation: last_char}
+              }
+            end
+      end | compact() | flatten()
+  end
+
+# MD027: Multiple spaces after blockquote symbol
+| def md027(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if line starts with blockquote symbol
+      | if (starts_with(trimmed, ">")):
+          do
+            # Check for multiple spaces after >
+            # Pattern: > followed by 2 or more spaces
+            let has_multiple_spaces = regex_match(trimmed, "^>  +")
+            | if (has_multiple_spaces):
+                {
+                  rule: "MD027",
+                  name: "no-multiple-space-blockquote",
+                  severity: "error",
+                  message: "Multiple spaces after blockquote symbol",
+                  line: i + 1,
+                  details: {}
+                }
+              else: None
+          end
+        else: None
+    end | compact()
+  end
+
+# MD028: Blank line inside blockquote
+| def md028(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      | let trimmed = trim(line)
+      # Check if current line starts with blockquote
+      | if (starts_with(trimmed, ">")):
+          do
+            # Check if next line is blank and line after that is a blockquote
+            let next_idx = i + 1
+            | let next_next_idx = i + 2
+            | if (next_idx < len(lines) && next_next_idx < len(lines)):
+                do
+                  let next_line = lines[next_idx]
+                  | let next_trimmed = trim(next_line)
+                  | let next_next_line = lines[next_next_idx]
+                  | let next_next_trimmed = trim(next_next_line)
+                  # Check if next line is blank and the one after starts with >
+                  | if (is_empty(next_trimmed) && starts_with(next_next_trimmed, ">")):
+                      {
+                        rule: "MD028",
+                        name: "no-blanks-blockquote",
+                        severity: "error",
+                        message: "Blank line inside blockquote",
+                        line: next_idx + 1,
+                        details: {}
                       }
                     else: None
                 end
               else: None
           end
-    end | compact()
-end
-
-# MD010: Hard tabs
-def md010(md, lines, config):
-  let rule_config = get_rule_config(config, "md010")
-  | let code_blocks = try: rule_config["code_blocks"] catch: true
-  | let in_code_block = false
-  | foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      | let trimmed = trim(line)
-      # Check if entering/exiting code block
-      | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-      | let in_code_block = if (is_fence): !in_code_block else: in_code_block
-      # Check for tabs
-      | let has_tab = contains(line, "\t")
-      | if (has_tab):
-          do
-            # Skip if in code block and code_blocks is true
-            let should_report = if (code_blocks && in_code_block): false else: true
-            | if (should_report):
-                {
-                  rule: "MD010",
-                  name: "no-hard-tabs",
-                  severity: "error",
-                  message: "Hard tabs found",
-                  line: i + 1,
-                  details: {}
-                }
-              else: None
-          end
         else: None
     end | compact()
-end
-
-# MD011: Reversed link syntax
-# TODO: Implement check for reversed link syntax
-# Requires analysis of text patterns
-def md011(content): []
-end
-
-# MD012: Multiple consecutive blank lines
-def md012(md, lines, config):
-  let rule_config = get_rule_config(config, "md012")
-  | let maximum = try: rule_config["maximum"] catch: 1
-  | let blank_count = 0
-  | let blank_start = 0
-  | foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      | let is_blank = is_empty(trim(line))
-      | if (is_blank):
-          do
-            let blank_count = blank_count + 1
-            | let blank_start = if (blank_count == 1): i + 1 else: blank_start
-            | None
-          end
-        else:
-          do
-            # Check if we had too many consecutive blank lines
-            let result = if (blank_count > maximum):
-              {
-                rule: "MD012",
-                name: "no-multiple-blanks",
-                severity: "error",
-                message: s"Multiple consecutive blank lines (${blank_count} blank lines, maximum: ${maximum})",
-                line: blank_start,
-                details: {count: blank_count, maximum: maximum}
-              }
-            else: None
-            | let blank_count = 0
-            | let blank_start = 0
-            | result
-          end
-    end | compact()
-end
-
-# MD013: Line length
-def md013(md, lines, config):
-  let rule_config = get_rule_config(config, "md013")
-  | let line_length = try: rule_config["line_length"] catch: 80
-  | let heading_line_length = try: rule_config["heading_line_length"] catch: line_length
-  | let code_blocks = try: rule_config["code_blocks"] catch: true
-  | let tables = try: rule_config["tables"] catch: true
-  | let headings = try: rule_config["headings"] catch: true
-  | let in_code_block = false
-  | let in_table = false
-  | foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      | let trimmed = trim(line)
-      # Check if entering/exiting code block
-      | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-      | let in_code_block = if (is_fence): !in_code_block else: in_code_block
-      # Check if in table (simple detection)
-      | let is_table_line = contains(line, "|")
-      | let in_table = is_table_line
-      # Check if heading
-      | let is_heading = starts_with(trimmed, "#")
-      # Determine if we should check this line
-      | let skip_code = in_code_block && code_blocks
-      | let skip_table = in_table && tables
-      | let skip_heading = is_heading && !headings
-      | let should_check = !skip_code && !skip_table && !skip_heading
-      # Determine maximum length for this line
-      | let max_length = if (is_heading && headings): heading_line_length else: line_length
-      # Check line length
-      | let current_length = len(line)
-      | if (should_check && current_length > max_length):
-          {
-            rule: "MD013",
-            name: "line-length",
-            severity: "warning",
-            message: s"Line too long (${current_length} characters, maximum: ${max_length})",
-            line: i + 1,
-            details: {length: current_length, maximum: max_length}
-          }
-        else: None
-    end | compact()
-end
-
-# MD014: Dollar signs used before commands without showing output
-def md014(md, lines, config):
-  let in_code_block = false
-  | foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      | let trimmed = trim(line)
-      # Check if entering/exiting code block
-      | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-      | let in_code_block = if (is_fence): !in_code_block else: in_code_block
-      # Check for dollar sign at start of command in code block
-      | if (in_code_block && !is_fence):
-          do
-            let has_dollar = starts_with(trimmed, "$") || starts_with(trimmed, "$ ")
-            | if (has_dollar):
-                {
-                  rule: "MD014",
-                  name: "commands-show-output",
-                  severity: "warning",
-                  message: "Dollar signs used before commands without showing output",
-                  line: i + 1,
-                  details: {}
-                }
-              else: None
-          end
-        else: None
-    end | compact()
-end
-
-# MD018: No space after hash on atx style header
-def md018(md, lines, config):
-  foreach (i, range(0, len(lines) - 1, 1)):
-    let line = lines[i]
-    | let trimmed = trim(line)
-    # Check if line starts with # (atx style heading)
-    | if (starts_with(trimmed, "#")):
-        do
-          # Check if there's no space after the hash(es)
-          # Pattern: one or more # followed by a non-space, non-# character
-          let has_no_space = regex_match(trimmed, "^#+[^ #]")
-          | if (has_no_space):
-              {
-                rule: "MD018",
-                name: "no-missing-space-atx",
-                severity: "error",
-                message: "No space after hash on atx style heading",
-                line: i + 1,
-                details: {}
-              }
-            else: None
-        end
-      else: None
-  end | compact()
-end
-
-# MD019: Multiple spaces after hash on atx style header
-def md019(md, lines, config):
-  let headings = do md | .h | compact();
-  | foreach (head, headings):
-      let pos = _get_markdown_position(head)
-      | let line = lines[pos["start_line"] - 1]
-      | let trimmed = trim(line)
-      # Check if line starts with # (atx style heading)
-      | if (starts_with(trimmed, "#")):
-          do
-            # Check if there are multiple spaces after the hash(es)
-            # Pattern: one or more # followed by 2 or more spaces
-            let has_multiple_spaces = regex_match(trimmed, "^#+  +")
-            | if (has_multiple_spaces):
-                {
-                  rule: "MD019",
-                  name: "no-multiple-space-atx",
-                  severity: "error",
-                  message: "Multiple spaces after hash on atx style heading",
-                  line: pos["start_line"],
-                  details: {}
-                }
-              else: None
-          end
-        else: None
-    end | compact()
-end
-
-# MD020: No space inside hashes on closed atx style header
-def md020(md, lines, config):
-  foreach (i, range(0, len(lines) - 1, 1)):
-    let line = lines[i]
-    | let trimmed = trim(line)
-    # Check if line is closed atx style (starts and ends with #)
-    | if (starts_with(trimmed, "#") && ends_with(trimmed, "#")):
-        do
-          # Check if there's no space after opening hash(es)
-          let no_space_after = test(trimmed, "^#+[^ #]")
-          # Check if there's no space before closing hash(es)
-          | let no_space_before = test(trimmed, "[^ #]#+$")
-          | if (no_space_after || no_space_before):
-              {
-                rule: "MD020",
-                name: "no-missing-space-closed-atx",
-                severity: "error",
-                message: "No space inside hashes on closed atx style heading",
-                line: i + 1,
-                details: {}
-              }
-            else: None
-        end
-      else: None
-  end | compact()
-end
-
-# MD021: Multiple spaces inside hashes on closed atx style header
-def md021(md, lines, config):
-  foreach (i, range(0, len(lines) - 1, 1)):
-    let line = lines[i]
-    | let trimmed = trim(line)
-    # Check if line is closed atx style (starts and ends with #)
-    | if (starts_with(trimmed, "#") && ends_with(trimmed, "#")):
-        do
-          # Check if there are multiple spaces after opening hash(es)
-          let multiple_spaces_after = test(trimmed, "^#+  +")
-          # Check if there are multiple spaces before closing hash(es)
-          | let multiple_spaces_before = test(trimmed, "  +#+$")
-          | if (multiple_spaces_after || multiple_spaces_before):
-              {
-                rule: "MD021",
-                name: "no-multiple-space-closed-atx",
-                severity: "error",
-                message: "Multiple spaces inside hashes on closed atx style heading",
-                line: i + 1,
-                details: {}
-              }
-            else: None
-        end
-      else: None
-  end | compact()
-end
-
-# MD022: Headers should be surrounded by blank lines
-def md022(md, lines, config):
-  let rule_config = get_rule_config(config, "md022")
-  | let lines_above = try: rule_config["lines_above"] catch: 1
-  | let lines_below = try: rule_config["lines_below"] catch: 1
-  | foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      | let trimmed = trim(line)
-      | let next_line = if (i < len(lines) - 1): lines[i + 1] else: ""
-      | let next_trimmed = trim(next_line)
-      # Detect ATX style heading
-      | if (starts_with(trimmed, "#") && !is_empty(trimmed)):
-          do
-            let issues = []
-            # Check line above (skip if first line)
-            | let issues = if (i > 0):
-                          do
-                                        let prev_line = lines[i - 1]
-                                        | let prev_trimmed = trim(prev_line)
-                                        | if (!is_empty(prev_trimmed)):
-                                            add(issues, {
-                                              rule: "MD022",
-                                              name: "blanks-around-headings",
-                                              severity: "error",
-                                              message: "Headings should be surrounded by blank lines",
-                                              line: i + 1,
-                                              details: {position: "above"}
-                                            })
-                                          else: issues
-                                      end
-                        else: issues
-            # Check line below (skip if last line)
-            | let issues = if (i < len(lines) - 1):
-                          do
-                                        let next_line = lines[i + 1]
-                                        | let next_trimmed = trim(next_line)
-                                        # Skip if next line is setext underline
-                                        | let is_setext_underline = regex_match(next_trimmed, "^[=\\-]+$")
-                                        | if (!is_empty(next_trimmed) && !is_setext_underline):
-                                            add(issues, {
-                                              rule: "MD022",
-                                              name: "blanks-around-headings",
-                                              severity: "error",
-                                              message: "Headings should be surrounded by blank lines",
-                                              line: i + 1,
-                                              details: {position: "below"}
-                                            })
-                                          else: issues
-                                      end
-                        else: issues
-            | issues
-          end
-        # Detect Setext style heading (next line is === or ---)
-        elif (!is_empty(trimmed) && !is_empty(next_trimmed) && regex_match(next_trimmed, "^[=\\-]+$")):
-          do
-            let issues = []
-            # Check line above the heading text (skip if first line)
-            | let issues = if (i > 0):
-                          do
-                                        let prev_line = lines[i - 1]
-                                        | let prev_trimmed = trim(prev_line)
-                                        | if (!is_empty(prev_trimmed)):
-                                            add(issues, {
-                                              rule: "MD022",
-                                              name: "blanks-around-headings",
-                                              severity: "error",
-                                              message: "Headings should be surrounded by blank lines",
-                                              line: i + 1,
-                                              details: {position: "above"}
-                                            })
-                                          else: issues
-                                      end
-                        else: issues
-            # Check line below the underline (skip if last line)
-            | let issues = if (i + 1 < len(lines) - 1):
-                          do
-                                        let line_after_underline = lines[i + 2]
-                                        | let after_trimmed = trim(line_after_underline)
-                                        | if (!is_empty(after_trimmed)):
-                                            add(issues, {
-                                              rule: "MD022",
-                                              name: "blanks-around-headings",
-                                              severity: "error",
-                                              message: "Headings should be surrounded by blank lines",
-                                              line: i + 2,
-                                              details: {position: "below"}
-                                            })
-                                          else: issues
-                                      end
-                        else: issues
-            | issues
-          end
-        else: []
-    end | flatten() | compact()
-end
-
-# MD023: Headers must start at the beginning of the line
-def md023(md, lines, config):
-  foreach (i, range(0, len(lines) - 1, 1)):
-    let line = lines[i]
-    | let trimmed = trim(line)
-    | let next_line = if (i < len(lines) - 1): lines[i + 1] else: ""
-    | let next_trimmed = trim(next_line)
-    # Check if line has leading spaces/tabs
-    | let has_leading_space = starts_with(line, " ") || starts_with(line, "\t")
-    # Check for indented ATX style heading
-    | if (has_leading_space && starts_with(trimmed, "#") && !is_empty(trimmed)):
-        {
-          rule: "MD023",
-          name: "heading-start-left",
-          severity: "error",
-          message: "Headings must start at the beginning of the line",
-          line: i + 1,
-          details: {}
-        }
-      # Check for indented Setext style heading
-      elif (has_leading_space && !is_empty(trimmed) && !is_empty(next_trimmed) && regex_match(next_trimmed, "^[=\\-]+$")):
-        {
-          rule: "MD023",
-          name: "heading-start-left",
-          severity: "error",
-          message: "Headings must start at the beginning of the line",
-          line: i + 1,
-          details: {}
-        }
-      else: None
-  end | compact()
-end
-
-# MD024: Multiple headers with the same content
-def md024(content, config):
-  let headings = do content | .h | compact();
-  | let issues = []
-  | let seen = {}
-  | foreach (i, range(0, len(headings) - 1, 1)):
-      let heading = headings[i]
-      | let heading_text = to_text(heading)
-      | if (contains(seen, heading_text)):
-          {
-            rule: "MD024",
-            name: "no-duplicate-header",
-            severity: "warning",
-            message: s"Multiple headers with the same content: '${heading_text}'",
-            heading: heading_text,
-            line: i + 1,
-            details: {duplicate_text: heading_text}
-          }
-        elif (!is_none(heading_text)): do
-            let seen = set(seen, heading_text, true)
-            | None
-          end
-    end | compact()
-end
-
-# MD025: Multiple top level headers in the same document
-def md025(content, config):
-  let rule_config = get_rule_config(config, "md025")
-  | let top_level = try: rule_config["level"] catch: 1
-  | let headings = do content | .h | compact();
-  | let h1_headings = filter(headings, fn(h): attr(h, "level") == top_level;)
-  | if (len(h1_headings) > 1):
-      foreach (i, range(1, len(h1_headings) - 1, 1)):
-        let heading_text = to_text(h1_headings[i])
-        | {
-          rule: "MD025",
-          name: "single-h1",
-          severity: "error",
-          message: s"Multiple top level headers found (h${top_level} should be unique)",
-          heading: heading_text,
-          line: i + 1,
-          details: {level: top_level}
-        }
-      end
-    else: []
-end
-
-# MD026: Trailing punctuation in header
-def md026(content, config):
-  let rule_config = get_rule_config(config, "md026")
-  | let punctuation = try: rule_config["punctuation"] catch: ".,;:!?"
-  | let headings = do content | .h | compact();
-  | let issues = []
-  | foreach (i, range(0, len(headings) - 1, 1)):
-      let heading = headings[i]
-      | let heading_text = to_text(heading)
-      | let last_char = slice(heading_text, len(heading_text) - 1, len(heading_text))
-      | if (contains(punctuation, last_char)):
-          do
-            {
-              rule: "MD026",
-              name: "no-trailing-punctuation",
-              severity: "warning",
-              message: s"Trailing punctuation in header: '${last_char}'",
-              heading: heading_text,
-              line: i + 1,
-              details: {punctuation: last_char}
-            }
-          end
-    end | compact() | flatten()
-end
-
-# MD027: Multiple spaces after blockquote symbol
-def md027(md, lines, config):
-  foreach (i, range(0, len(lines) - 1, 1)):
-    let line = lines[i]
-    | let trimmed = trim(line)
-    # Check if line starts with blockquote symbol
-    | if (starts_with(trimmed, ">")):
-        do
-          # Check for multiple spaces after >
-          # Pattern: > followed by 2 or more spaces
-          let has_multiple_spaces = regex_match(trimmed, "^>  +")
-          | if (has_multiple_spaces):
-              {
-                rule: "MD027",
-                name: "no-multiple-space-blockquote",
-                severity: "error",
-                message: "Multiple spaces after blockquote symbol",
-                line: i + 1,
-                details: {}
-              }
-            else: None
-        end
-      else: None
-  end | compact()
-end
-
-# MD028: Blank line inside blockquote
-def md028(md, lines, config):
-  foreach (i, range(0, len(lines) - 1, 1)):
-    let line = lines[i]
-    | let trimmed = trim(line)
-    # Check if current line starts with blockquote
-    | if (starts_with(trimmed, ">")):
-        do
-          # Check if next line is blank and line after that is a blockquote
-          let next_idx = i + 1
-          | let next_next_idx = i + 2
-          | if (next_idx < len(lines) && next_next_idx < len(lines)):
-              do
-                let next_line = lines[next_idx]
-                | let next_trimmed = trim(next_line)
-                | let next_next_line = lines[next_next_idx]
-                | let next_next_trimmed = trim(next_next_line)
-                # Check if next line is blank and the one after starts with >
-                | if (is_empty(next_trimmed) && starts_with(next_next_trimmed, ">")):
-                    {
-                      rule: "MD028",
-                      name: "no-blanks-blockquote",
-                      severity: "error",
-                      message: "Blank line inside blockquote",
-                      line: next_idx + 1,
-                      details: {}
-                    }
-                  else: None
-              end
-            else: None
-        end
-      else: None
-  end | compact()
-end
+  end
 
 # MD029: Ordered list item prefix
-def md029(md, lines, config):
-  let rule_config = get_rule_config(config, "md029")
-  | let style = try: rule_config["style"] catch: "one_or_ordered"
-  | let list_items = []
-  | let in_code_block = false
-  | let list_items = do
-      foreach (i, range(0, len(lines) - 1, 1)):
-          let line = lines[i]
-          | let trimmed = trim(line)
-          # Check if entering/exiting code block
-          | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-          | let in_code_block = if (is_fence): !in_code_block else: in_code_block
-          # Check for ordered list item (pattern: number followed by dot and space)
-          | if (!in_code_block && regex_match(trimmed, "^\\d+\\. ")):
-              do
-                # Extract the number
-                let matches = regex_match(trimmed, "^(\\d+)\\. ")
-                | if (matches):
+| def md029(md, lines, config):
+    let rule_config = get_rule_config(config, "md029")
+    | let style = try: rule_config["style"] catch: "one_or_ordered"
+    | let list_items = []
+    | let in_code_block = false
+    | let list_items = do
+          foreach (i, range(0, len(lines) - 1, 1)):
+                let line = lines[i]
+                | let trimmed = trim(line)
+                # Check if entering/exiting code block
+                | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+                | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+                # Check for ordered list item (pattern: number followed by dot and space)
+                | if (!in_code_block && regex_match(trimmed, "^\\d+\\. ")):
                     do
-                      # Extract first digit(s) before the dot
-                      let num_str = slice(trimmed, 0, index(trimmed, "."))
-                      | let num = try: to_number(num_str) catch: 0
-                      | {line: i + 1, number: num}
+                      # Extract the number
+                      let matches = regex_match(trimmed, "^(\\d+)\\. ")
+                      | if (matches):
+                          do
+                            # Extract first digit(s) before the dot
+                            let num_str = slice(trimmed, 0, index(trimmed, "."))
+                            | let num = try: to_number(num_str) catch: 0
+                            | {line: i + 1, number: num}
+                          end
+                        else: None
                     end
                   else: None
-              end
-            else: None
-        end | compact()
-    end
-  # Detect style if "one_or_ordered"
-  | let detected_style = if (style == "one_or_ordered"):
-      do
-          if (len(list_items) == 0): "one"
-          elif (len(list_items) == 1): "one"
-          else:
-            do
-              # Check if all are 1
-              let all_one = foreach (item, list_items):
-                              if (item["number"] == 1): true else: false
-                            end
-              | let all_one = if (len(filter(all_one, fn(x): x;)) == len(list_items)): true else: false
-              | if (all_one): "one" else: "ordered"
-            end
+              end | compact()
         end
-    else: style
-  # Check each list item
-  | foreach (idx, range(0, len(list_items) - 1, 1)):
-      let item = list_items[idx]
-      | let num = item["number"]
-      | let line_num = item["line"]
-      | let expected = match (detected_style):
-              | "one": 1
-              | "ordered": idx + 1
-              | "zero": 0
-              | _: idx + 1
-            end
-      | if (num != expected):
-          {
-            rule: "MD029",
-            name: "ol-prefix",
-            severity: "error",
-            message: s"Ordered list item prefix [Expected: ${expected}; Actual: ${num}; Style: ${detected_style}]",
-            line: line_num,
-            details: {expected: expected, actual: num, style: detected_style}
-          }
-    end | compact()
-end
+    # Detect style if "one_or_ordered"
+    | let detected_style = if (style == "one_or_ordered"):
+          do
+                if (len(list_items) == 0): "one"
+                elif (len(list_items) == 1): "one"
+                else:
+                  do
+                    # Check if all are 1
+                    let all_one = foreach (item, list_items):
+                                          if (item["number"] == 1): true else: false
+                                        end
+                    | let all_one = if (len(filter(all_one, fn(x): x;)) == len(list_items)): true else: false
+                    | if (all_one): "one" else: "ordered"
+                  end
+              end
+        else: style
+    # Check each list item
+    | foreach (idx, range(0, len(list_items) - 1, 1)):
+        let item = list_items[idx]
+        | let num = item["number"]
+        | let line_num = item["line"]
+        | let expected = match (detected_style):
+                  | "one": 1
+                  | "ordered": idx + 1
+                  | "zero": 0
+                  | _: idx + 1
+                end
+        | if (num != expected):
+            {
+              rule: "MD029",
+              name: "ol-prefix",
+              severity: "error",
+              message: s"Ordered list item prefix [Expected: ${expected}; Actual: ${num}; Style: ${detected_style}]",
+              line: line_num,
+              details: {expected: expected, actual: num, style: detected_style}
+            }
+      end | compact()
+  end
 
 # MD030: Spaces after list markers
-# TODO: Implement check for spaces after list markers
-# Requires access to raw markdown text
-def md030(content): []
-end
+| def md030(md, lines, config):
+    let rule_config = get_rule_config(config, "md030")
+    | let ul_single = try: rule_config["ul_single"] catch: 1
+    | let ol_single = try: rule_config["ol_single"] catch: 1
+    | let ul_multi = try: rule_config["ul_multi"] catch: 1
+    | let ol_multi = try: rule_config["ol_multi"] catch: 1
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check for unordered list marker (-, *, +)
+        | if (regex_match(trimmed, "^[\\-\\*\\+] ")):
+            do
+              # Count spaces after marker
+              let marker_end = 1              # Single character marker
+              | let after_marker = slice(trimmed, marker_end, len(trimmed))
+              | let space_count = 0
+              | let counting = true
+              | let result = foreach (j, range(0, len(after_marker) - 1, 1)):
+                              let char = slice(after_marker, j, j + 1)
+                              | if (char == " " && counting): 1
+                                elif (counting): do let counting = false | 0 end
+                                else: 0
+                            end
+              | let space_count = len(filter(result, fn(x): x == 1;))
+              | if (space_count != ul_single):
+                  {
+                    rule: "MD030",
+                    name: "list-marker-space",
+                    severity: "error",
+                    message: s"Spaces after list markers [Expected: ${ul_single}; Actual: ${space_count}]",
+                    line: i + 1,
+                    details: {expected: ul_single, actual: space_count, marker_type: "ul"}
+                  }
+                else: None
+            end
+          # Check for ordered list marker (1., 2., etc.)
+          elif (regex_match(trimmed, "^\\d+\\. ")):
+            do
+              # Find the position after the dot
+              let dot_pos = index(trimmed, ".")
+              | let after_marker = slice(trimmed, dot_pos + 1, len(trimmed))
+              | let space_count = 0
+              | let counting = true
+              | let result = foreach (j, range(0, len(after_marker) - 1, 1)):
+                              let char = slice(after_marker, j, j + 1)
+                              | if (char == " " && counting): 1
+                                elif (counting): do let counting = false | 0 end
+                                else: 0
+                            end
+              | let space_count = len(filter(result, fn(x): x == 1;))
+              | if (space_count != ol_single):
+                  {
+                    rule: "MD030",
+                    name: "list-marker-space",
+                    severity: "error",
+                    message: s"Spaces after list markers [Expected: ${ol_single}; Actual: ${space_count}]",
+                    line: i + 1,
+                    details: {expected: ol_single, actual: space_count, marker_type: "ol"}
+                  }
+                else: None
+            end
+          else: None
+      end | compact()
+  end
 
 # MD031: Fenced code blocks should be surrounded by blank lines
-# TODO: Implement check for blank lines around code blocks
-# Requires access to raw markdown text
-def md031(content): []
-end
+| def md031(md, lines, config):
+    let rule_config = get_rule_config(config, "md031")
+    | let list_items = try: rule_config["list_items"] catch: true
+    | let in_code_block = false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+        | if (is_fence):
+            do
+              if (!in_code_block):
+                do
+                  # Starting a code block - check for blank line above
+                  let in_code_block = true
+                  | if (i > 0):
+                      do
+                        let prev_line = lines[i - 1]
+                        | let prev_trimmed = trim(prev_line)
+                        | if (!is_empty(prev_trimmed)):
+                            {
+                              rule: "MD031",
+                              name: "blanks-around-fences",
+                              severity: "error",
+                              message: "Fenced code blocks should be surrounded by blank lines",
+                              line: i + 1,
+                              details: {position: "above"}
+                            }
+                          else: None
+                      end
+                    else: None
+                end
+              else:
+                do
+                  # Ending a code block - check for blank line below
+                  let in_code_block = false
+                  | if (i < len(lines) - 1):
+                      do
+                        let next_line = lines[i + 1]
+                        | let next_trimmed = trim(next_line)
+                        | if (!is_empty(next_trimmed)):
+                            {
+                              rule: "MD031",
+                              name: "blanks-around-fences",
+                              severity: "error",
+                              message: "Fenced code blocks should be surrounded by blank lines",
+                              line: i + 1,
+                              details: {position: "below"}
+                            }
+                          else: None
+                      end
+                    else: None
+                end
+            end
+          else: None
+      end | compact()
+  end
 
 # MD032: Lists should be surrounded by blank lines
-# TODO: Implement check for blank lines around lists
-# Requires access to raw markdown text
-def md032(content): []
-end
+| def md032(md, lines, config):
+    let in_list = false
+    | let list_start = 0
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        | let is_blank = is_empty(trimmed)
+        # Check if line is a list item
+        | let is_list_item = regex_match(trimmed, "^[\\-\\*\\+] ") || regex_match(trimmed, "^\\d+\\. ")
+        | if (is_list_item && !in_list):
+            do
+              # Starting a list - check for blank line above
+              let in_list = true
+              | let list_start = i
+              | if (i > 0):
+                  do
+                    let prev_line = lines[i - 1]
+                    | let prev_trimmed = trim(prev_line)
+                    | if (!is_empty(prev_trimmed)):
+                        {
+                          rule: "MD032",
+                          name: "blanks-around-lists",
+                          severity: "error",
+                          message: "Lists should be surrounded by blank lines",
+                          line: i + 1,
+                          details: {position: "above"}
+                        }
+                      else: None
+                  end
+                else: None
+            end
+          elif (!is_list_item && !is_blank && in_list):
+            do
+              # Ending a list - check for blank line above the current non-list line
+              let in_list = false
+              | {
+                rule: "MD032",
+                name: "blanks-around-lists",
+                severity: "error",
+                message: "Lists should be surrounded by blank lines",
+                line: i + 1,
+                details: {position: "below"}
+              }
+            end
+          elif (is_blank && in_list && i < len(lines) - 1):
+            do
+              # Blank line in list - check if next line is non-list item
+              let next_line = lines[i + 1]
+              | let next_trimmed = trim(next_line)
+              | let next_is_list = regex_match(next_trimmed, "^[\\-\\*\\+] ") || regex_match(next_trimmed, "^\\d+\\. ")
+              | if (!is_empty(next_trimmed) && !next_is_list):
+                  do
+                    # List ended with blank line
+                    let in_list = false
+                    | None
+                  end
+                else: None
+            end
+          else: None
+      end | compact()
+  end
 
 # MD033: Inline HTML
-def md033(content, config):
-  let rule_config = get_rule_config(config, "md033")
-  | let allowed_elements = try: rule_config["allowed-elements"] catch: []
-  | let html_nodes = do content | .html | compact();
-  | if (is_empty(html_nodes)): []
-    else: do
-        let issues = []
-        | foreach (i, range(0, len(html_nodes) - 1, 1)):
-            let html_node = html_nodes[i]
-            | let html_text = to_text(html_node)
-            | {
-              rule: "MD033",
-              name: "no-inline-html",
-              severity: "warning",
-              message: s"Inline HTML found: ${html_text}",
-              line: i + 1,
-              details: {html: html_text}
-            }
-          end
-      end
-end
+| def md033(content, config):
+    let rule_config = get_rule_config(config, "md033")
+    | let allowed_elements = try: rule_config["allowed-elements"] catch: []
+    | let html_nodes = do content | .html | compact();
+    | if (is_empty(html_nodes)): []
+      else: do
+          let issues = []
+          | foreach (i, range(0, len(html_nodes) - 1, 1)):
+              let html_node = html_nodes[i]
+              | let html_text = to_text(html_node)
+              | {
+                rule: "MD033",
+                name: "no-inline-html",
+                severity: "warning",
+                message: s"Inline HTML found: ${html_text}",
+                line: i + 1,
+                details: {html: html_text}
+              }
+            end
+        end
+  end
 
 # MD034: Bare URL used
-# TODO: Implement bare URL detection
-# Requires analysis of link nodes
-def md034(content): []
-end
+| def md034(md, lines, config):
+    let in_code_block = false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check if entering/exiting code block
+        | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+        | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+        # Skip code blocks and inline code
+        | if (!in_code_block && !contains(line, "`")):
+            do
+              # Check for bare URLs (http://, https://, ftp://, ftps://)
+              let has_http = contains(line, "http://") || contains(line, "https://")
+              | let has_ftp = contains(line, "ftp://") || contains(line, "ftps://")
+              | if (has_http || has_ftp):
+                  do
+                    # Check if URL is surrounded by angle brackets or in markdown link syntax
+                    let has_angle_brackets = contains(line, "<http") || contains(line, "<ftp")
+                    | let has_link_syntax = contains(line, "](http") || contains(line, "](https") || contains(line, "](ftp")
+                    | if (!has_angle_brackets && !has_link_syntax):
+                        {
+                          rule: "MD034",
+                          name: "no-bare-urls",
+                          severity: "warning",
+                          message: "Bare URL used",
+                          line: i + 1,
+                          details: {}
+                        }
+                      else: None
+                  end
+                else: None
+            end
+          else: None
+      end | compact()
+  end
 
 # MD035: Horizontal rule style
-# TODO: Implement horizontal rule style consistency check
-# Requires access to raw markdown text
-def md035(content): []
-end
+| def md035(md, lines, config):
+    let rule_config = get_rule_config(config, "md035")
+    | let expected_style = try: rule_config["style"] catch: "consistent"
+    | let hr_lines = []
+    | let hr_lines = do
+          foreach (i, range(0, len(lines) - 1, 1)):
+                let line = lines[i]
+                | let trimmed = trim(line)
+                # Check for horizontal rule patterns: ---, ***, ___
+                | let is_dash_hr = regex_match(trimmed, "^-{3,}$")
+                | let is_asterisk_hr = regex_match(trimmed, "^\\*{3,}$")
+                | let is_underscore_hr = regex_match(trimmed, "^_{3,}$")
+                | if (is_dash_hr):
+                    {line: i + 1, style: trimmed, type: "dash"}
+                  elif (is_asterisk_hr):
+                    {line: i + 1, style: trimmed, type: "asterisk"}
+                  elif (is_underscore_hr):
+                    {line: i + 1, style: trimmed, type: "underscore"}
+                  else: None
+              end | compact()
+        end
+    # Determine the target style type
+    | let is_consistent = expected_style == "consistent"
+    | let target_type = if (is_consistent):
+          if (len(hr_lines) > 0): hr_lines[0]["type"] else: "dash"
+        else:
+          if (starts_with(expected_style, "-")): "dash"
+          elif (starts_with(expected_style, "*")): "asterisk"
+          elif (starts_with(expected_style, "_")): "underscore"
+          else: "dash"
+    | let target_style = if (is_consistent):
+          if (len(hr_lines) > 0): hr_lines[0]["style"] else: "---"
+        else: expected_style
+    # Check each horizontal rule
+    | foreach (hr, hr_lines):
+        let style = hr["style"]
+        | let hr_type = hr["type"]
+        | let line_num = hr["line"]
+        # In consistent mode, check type; otherwise check exact match
+        | let is_violation = if (is_consistent):
+                  hr_type != target_type
+                else:
+                  style != target_style
+        | if (is_violation):
+            {
+              rule: "MD035",
+              name: "hr-style",
+              severity: "warning",
+              message: s"Horizontal rule style should be '${target_style}' but found '${style}'",
+              line: line_num,
+              details: {expected: target_style, found: style}
+            }
+      end | compact()
+  end
 
 # MD036: Emphasis used instead of a header
-# TODO: Implement check for emphasis misused as header
-# Requires semantic analysis
-def md036(content): []
-end
+| def md036(md, lines, config):
+    let rule_config = get_rule_config(config, "md036")
+    | let punctuation = try: rule_config["punctuation"] catch: ".,;:!?。，；：！？"
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check if line is entirely emphasized (bold or italic)
+        # Patterns: **text**, *text*, __text__, _text_
+        | let is_bold_asterisk = regex_match(trimmed, "^\\*\\*[^\\*]+\\*\\*$")
+        | let is_italic_asterisk = regex_match(trimmed, "^\\*[^\\*]+\\*$")
+        | let is_bold_underscore = regex_match(trimmed, "^__[^_]+__$")
+        | let is_italic_underscore = regex_match(trimmed, "^_[^_]+_$")
+        | let is_emphasized = is_bold_asterisk || is_italic_asterisk || is_bold_underscore || is_italic_underscore
+        | if (is_emphasized):
+            do
+              # Check if it ends with punctuation
+              let last_char = slice(trimmed, len(trimmed) - 3, len(trimmed) - 2)
+              | let ends_with_punct = contains(punctuation, last_char)
+              | if (!ends_with_punct):
+                  {
+                    rule: "MD036",
+                    name: "no-emphasis-as-heading",
+                    severity: "warning",
+                    message: "Emphasis used instead of a heading",
+                    line: i + 1,
+                    details: {}
+                  }
+                else: None
+            end
+          else: None
+      end | compact()
+  end
 
 # MD037: Spaces inside emphasis markers
-# TODO: Implement check for spaces inside emphasis
-# Requires access to raw markdown text
-def md037(content): []
-end
+| def md037(md, lines, config):
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      # Check for spaces inside emphasis markers
+      # Patterns: * text *, ** text **, _ text _, __ text __
+      | let has_italic_space = regex_match(line, "\\*\\s+[^\\*]+\\s+\\*") || regex_match(line, "_\\s+[^_]+\\s+_")
+      | let has_bold_space = regex_match(line, "\\*\\*\\s+[^\\*]+\\s+\\*\\*") || regex_match(line, "__\\s+[^_]+\\s+__")
+      | if (has_italic_space || has_bold_space):
+          {
+            rule: "MD037",
+            name: "no-space-in-emphasis",
+            severity: "warning",
+            message: "Spaces inside emphasis markers",
+            line: i + 1,
+            details: {}
+          }
+        else: None
+    end | compact()
+  end
 
 # MD038: Spaces inside code span elements
 # TODO: Implement check for spaces inside code spans
 # Requires access to raw markdown text
-def md038(content): []
-end
+| def md038(content): []
+  end
 
 # MD039: Spaces inside link text
 # TODO: Implement check for spaces inside link text
 # Requires access to raw markdown text
-def md039(content): []
-end
+| def md039(content): []
+  end
 
 # MD040: Fenced code blocks should have a language specified
-def md040(content, config):
-  let rule_config = get_rule_config(config, "md040")
-  | let enabled = try: rule_config["enabled"] catch: true
-  | if (!enabled): []
-    else: do
-        let code_blocks = do content | .code | compact();
-        | let issues = []
-        | foreach (i, range(0, len(code_blocks) - 1, 1)):
-            let code_block = code_blocks[i]
-            | let language = attr(code_block, "lang")
-            | if (is_empty(language)):
-                do
-                  {
-                    rule: "MD040",
-                    name: "fenced-code-language",
-                    severity: "warning",
-                    message: "Fenced code block should have a language specified",
-                    line: i + 1,
-                    details: {}
-                  }
-                end
-          end | compact() | flatten()
-      end
-end
+| def md040(content, config):
+    let rule_config = get_rule_config(config, "md040")
+    | let enabled = try: rule_config["enabled"] catch: true
+    | if (!enabled): []
+      else: do
+          let code_blocks = do content | .code | compact();
+          | let issues = []
+          | foreach (i, range(0, len(code_blocks) - 1, 1)):
+              let code_block = code_blocks[i]
+              | let language = attr(code_block, "lang")
+              | if (is_empty(language)):
+                  do
+                    {
+                      rule: "MD040",
+                      name: "fenced-code-language",
+                      severity: "warning",
+                      message: "Fenced code block should have a language specified",
+                      line: i + 1,
+                      details: {}
+                    }
+                  end
+            end | compact() | flatten()
+        end
+  end
 
 # MD041: First line in file should be a top level header
-def md041(content): []
-end
+| def md041(content): []
+  end
 
 # MD046: Code block style
 # TODO: Implement code block style consistency check
 # Requires access to raw markdown text
-def md046(content): []
-end
+| def md046(content): []
+  end
 
 # MD047: File should end with a single newline character
 # TODO: Implement check for file ending
 # Requires access to raw markdown text
-def md047(content): []
-end
+| def md047(content): []
+  end
 
 # Format a single issue for display
-def format_issue(issue):
-  let rule = get(issue, "rule")
-  | let name = get(issue, "name")
-  | let line = try: issue["line"] catch: "?"
-  | let severity = issue["severity"]
-  | let message = issue["message"]
-  | let severity_icon = match (severity):
-      | "error": "❌"
-      | "warning": "⚠️"
-      | "info": "ℹ️"
-      | _: "•"
-    end
-  | s"${line}:1 ${severity_icon} ${rule} (${name}) - ${message}"
-end
+| def format_issue(issue):
+    let rule = get(issue, "rule")
+    | let name = get(issue, "name")
+    | let line = try: issue["line"] catch: "?"
+    | let severity = issue["severity"]
+    | let message = issue["message"]
+    | let severity_icon = match (severity):
+          | "error": "❌"
+          | "warning": "⚠️"
+          | "info": "ℹ️"
+          | _: "•"
+        end
+    | s"${line}:1 ${severity_icon} ${rule} (${name}) - ${message}"
+  end
 
 # Count issues by severity
-def count_by_severity(issues):
-  let errors = do filter(issues, fn(i): i["severity"] == "error";) | len();
-  | let warnings = do filter(issues, fn(i): i["severity"] == "warning";) | len();
-  | let info = do filter(issues, fn(i): i["severity"] == "info";) | len();
-  | {
-    "errors": errors,
-    "warnings": warnings,
-    "info": info,
-    "total": len(issues)
-  }
-end
+| def count_by_severity(issues):
+    let errors = do filter(issues, fn(i): i["severity"] == "error";) | len();
+    | let warnings = do filter(issues, fn(i): i["severity"] == "warning";) | len();
+    | let info = do filter(issues, fn(i): i["severity"] == "info";) | len();
+    | {
+      "errors": errors,
+      "warnings": warnings,
+      "info": info,
+      "total": len(issues)
+    }
+  end
 
 # Run all lint rules with configuration
-def lint_all_with_config(content, config):
-  let md = to_markdown(content)
-  | let lines = split(content, "\n")
-  | let md001_issues = if (is_rule_enabled(config, "MD001")): md001(md) else: []
-  | let md002_issues = if (is_rule_enabled(config, "MD002")): md002(md, config) else: []
-  | let md003_issues = if (is_rule_enabled(config, "MD003")): md003(md, lines, config) else: []
-  | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(md, lines, config) else: []
-  | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(md) else: []
-  | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(md) else: []
-  | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(md) else: []
-  | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md, lines, config) else: []
-  | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md, lines, config) else: []
-  | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
-  | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md, lines, config) else: []
-  | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md, lines, config) else: []
-  | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md, lines, config) else: []
-  | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md, lines, config) else: []
-  | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(md, lines, config) else: []
-  | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(md, lines, config) else: []
-  | let md021_issues = if (is_rule_enabled(config, "MD021")): md021(md, lines, config) else: []
-  | let md022_issues = if (is_rule_enabled(config, "MD022")): md022(md, lines, config) else: []
-  | let md023_issues = if (is_rule_enabled(config, "MD023")): md023(md, lines, config) else: []
-  | let md024_issues = if (is_rule_enabled(config, "MD024")): md024(md, config) else: []
-  | let md025_issues = if (is_rule_enabled(config, "MD025")): md025(md, config) else: []
-  | let md026_issues = if (is_rule_enabled(config, "MD026")): md026(md, config) else: []
-  | let md027_issues = if (is_rule_enabled(config, "MD027")): md027(md, lines, config) else: []
-  | let md028_issues = if (is_rule_enabled(config, "MD028")): md028(md, lines, config) else: []
-  | let md029_issues = if (is_rule_enabled(config, "MD029")): md029(md, lines, config) else: []
-  | let md030_issues = if (is_rule_enabled(config, "MD030")): md030(md) else: []
-  | let md031_issues = if (is_rule_enabled(config, "MD031")): md031(md) else: []
-  | let md032_issues = if (is_rule_enabled(config, "MD032")): md032(md) else: []
-  | let md033_issues = if (is_rule_enabled(config, "MD033")): md033(md, config) else: []
-  | let md034_issues = if (is_rule_enabled(config, "MD034")): md034(md) else: []
-  | let md035_issues = if (is_rule_enabled(config, "MD035")): md035(md) else: []
-  | let md036_issues = if (is_rule_enabled(config, "MD036")): md036(md) else: []
-  | let md037_issues = if (is_rule_enabled(config, "MD037")): md037(md) else: []
-  | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(md) else: []
-  | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(md) else: []
-  | let md040_issues = if (is_rule_enabled(config, "MD040")): md040(md, config) else: []
-  | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(md) else: []
-  | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(md) else: []
-  | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(md) else: []
-  | let all_issues = flatten([
-    md001_issues, md002_issues,
-    md003_issues, md004_issues,
-    md005_issues, md006_issues,
-    md007_issues, md009_issues,
-    md010_issues, md011_issues,
-    md012_issues, md013_issues,
-    md014_issues, md018_issues,
-    md019_issues, md020_issues,
-    md021_issues, md022_issues,
-    md023_issues, md024_issues,
-    md025_issues, md026_issues,
-    md027_issues, md028_issues,
-    md029_issues, md030_issues,
-    md031_issues, md032_issues,
-    md033_issues, md034_issues,
-    md035_issues, md036_issues,
-    md037_issues, md038_issues,
-    md039_issues, md040_issues,
-    md041_issues, md046_issues, md047_issues,
-  ])
-  | {issues: all_issues, summary: count_by_severity(all_issues)}
-end
+| def lint_all_with_config(content, config):
+    let md = to_markdown(content)
+    | let lines = split(content, "\n")
+    | let md001_issues = if (is_rule_enabled(config, "MD001")): md001(md) else: []
+    | let md002_issues = if (is_rule_enabled(config, "MD002")): md002(md, config) else: []
+    | let md003_issues = if (is_rule_enabled(config, "MD003")): md003(md, lines, config) else: []
+    | let md004_issues = if (is_rule_enabled(config, "MD004")): md004(md, lines, config) else: []
+    | let md005_issues = if (is_rule_enabled(config, "MD005")): md005(md) else: []
+    | let md006_issues = if (is_rule_enabled(config, "MD006")): md006(md) else: []
+    | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(md) else: []
+    | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md, lines, config) else: []
+    | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md, lines, config) else: []
+    | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
+    | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md, lines, config) else: []
+    | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md, lines, config) else: []
+    | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md, lines, config) else: []
+    | let md018_issues = if (is_rule_enabled(config, "MD018")): md018(md, lines, config) else: []
+    | let md019_issues = if (is_rule_enabled(config, "MD019")): md019(md, lines, config) else: []
+    | let md020_issues = if (is_rule_enabled(config, "MD020")): md020(md, lines, config) else: []
+    | let md021_issues = if (is_rule_enabled(config, "MD021")): md021(md, lines, config) else: []
+    | let md022_issues = if (is_rule_enabled(config, "MD022")): md022(md, lines, config) else: []
+    | let md023_issues = if (is_rule_enabled(config, "MD023")): md023(md, lines, config) else: []
+    | let md024_issues = if (is_rule_enabled(config, "MD024")): md024(md, config) else: []
+    | let md025_issues = if (is_rule_enabled(config, "MD025")): md025(md, config) else: []
+    | let md026_issues = if (is_rule_enabled(config, "MD026")): md026(md, config) else: []
+    | let md027_issues = if (is_rule_enabled(config, "MD027")): md027(md, lines, config) else: []
+    | let md028_issues = if (is_rule_enabled(config, "MD028")): md028(md, lines, config) else: []
+    | let md029_issues = if (is_rule_enabled(config, "MD029")): md029(md, lines, config) else: []
+    | let md030_issues = if (is_rule_enabled(config, "MD030")): md030(md, lines, config) else: []
+    | let md031_issues = if (is_rule_enabled(config, "MD031")): md031(md, lines, config) else: []
+    | let md032_issues = if (is_rule_enabled(config, "MD032")): md032(md, lines, config) else: []
+    | let md033_issues = if (is_rule_enabled(config, "MD033")): md033(md, config) else: []
+    | let md034_issues = if (is_rule_enabled(config, "MD034")): md034(md, lines, config) else: []
+    | let md035_issues = if (is_rule_enabled(config, "MD035")): md035(md, lines, config) else: []
+    | let md036_issues = if (is_rule_enabled(config, "MD036")): md036(md, lines, config) else: []
+    | let md037_issues = if (is_rule_enabled(config, "MD037")): md037(md, lines, config) else: []
+    | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(md) else: []
+    | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(md) else: []
+    | let md040_issues = if (is_rule_enabled(config, "MD040")): md040(md, config) else: []
+    | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(md) else: []
+    | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(md) else: []
+    | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(md) else: []
+    | let all_issues = flatten([
+      md001_issues, md002_issues,
+      md003_issues, md004_issues,
+      md005_issues, md006_issues,
+      md007_issues, md009_issues,
+      md010_issues, md011_issues,
+      md012_issues, md013_issues,
+      md014_issues, md018_issues,
+      md019_issues, md020_issues,
+      md021_issues, md022_issues,
+      md023_issues, md024_issues,
+      md025_issues, md026_issues,
+      md027_issues, md028_issues,
+      md029_issues, md030_issues,
+      md031_issues, md032_issues,
+      md033_issues, md034_issues,
+      md035_issues, md036_issues,
+      md037_issues, md038_issues,
+      md039_issues, md040_issues,
+      md041_issues, md046_issues, md047_issues,
+    ])
+    | {issues: all_issues, summary: count_by_severity(all_issues)}
+  end
 
 # Run all lint rules (backward compatibility)
-def lint_all(content):
-  let config = default_config()
-  | lint_all_with_config(content, config)
-end
+| def lint_all(content):
+    let config = default_config()
+    | lint_all_with_config(content, config)
+  end
 
 # Generate formatted report
-def generate_report(lint_result):
-  let issues = lint_result[:issues]
-  | let summary = lint_result[:summary]
-  | let total = len(issues)
-  | if (total == 0):
-      s"✅ No issues found! Your Markdown is looking great."
-    else:
-      do
-        let header = s"# Markdown Lint Report
+| def generate_report(lint_result):
+    let issues = lint_result[:issues]
+    | let summary = lint_result[:summary]
+    | let total = len(issues)
+    | if (total == 0):
+        s"✅ No issues found! Your Markdown is looking great."
+      else:
+        do
+          let header = s"# Markdown Lint Report
 "
-        | let errors = summary["errors"]
-        | let warnings = summary["warnings"]
-        | let info = summary["info"]
-        | let summary_text = s"
+          | let errors = summary["errors"]
+          | let warnings = summary["warnings"]
+          | let info = summary["info"]
+          | let summary_text = s"
 Found ${total} issues:
 " + s"
 - ❌ Errors: ${errors}" + s"
@@ -1167,8 +1468,8 @@ Found ${total} issues:
 - ℹ️  Info: ${info}
 
 "
-        | let issue_list = s"## Issues
+          | let issue_list = s"## Issues
 
 " + join(map(issues, format_issue), "\n") | header + summary_text + issue_list
-      end
-end
+        end
+  end
