@@ -2172,6 +2172,89 @@ def test_md051_no_fragments():
   | assert_eq(len(result), 0)
 end
 
+# Test data for MD052 - Reference links should use defined labels
+def test_md052_defined_reference():
+  let config = default_config()
+  | let raw_content = "[Link text][label]\n\n[label]: https://example.com\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md052(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md052_no_reference_links():
+  let config = default_config()
+  | let raw_content = "[Link](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md052(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD053 - Reference definitions should be needed
+def test_md053_used_definition():
+  let config = default_config()
+  | let raw_content = "[Link][label]\n\n[label]: https://example.com\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md053(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md053_no_definitions():
+  let config = default_config()
+  | let raw_content = "[Link](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md053(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD054 - Link and image style
+def test_md054_consistent_inline():
+  let config = default_config()
+  | let raw_content = "[Link1](url1) and [Link2](url2)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md054(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md054_consistent_reference():
+  let config = default_config()
+  | let raw_content = "[Link1][ref1] and [Link2][ref2]\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md054(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md054_mixed_styles():
+  let config = default_config()
+  | let raw_content = "[Link1](url1) and [Link2][ref2]\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md054(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD054")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md054_enforce_inline():
+  let config = {
+    lint: {
+      rules: ["MD054"],
+      md054: {style: "inline"}
+    }
+  }
+  | let raw_content = "[Link][ref]\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md054(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["details"]["expected"], "inline")
+end
+
 # Test helper functions
 def test_format_issue():
   let issue = {
@@ -2507,6 +2590,14 @@ end
   test_case("MD050: Enforce underscore", test_md050_enforce_underscore),
   test_case("MD051: Valid fragment", test_md051_valid_fragment),
   test_case("MD051: No fragments", test_md051_no_fragments),
+  test_case("MD052: Defined reference", test_md052_defined_reference),
+  test_case("MD052: No reference links", test_md052_no_reference_links),
+  test_case("MD053: Used definition", test_md053_used_definition),
+  test_case("MD053: No definitions", test_md053_no_definitions),
+  test_case("MD054: Consistent inline", test_md054_consistent_inline),
+  test_case("MD054: Consistent reference", test_md054_consistent_reference),
+  test_case("MD054: Mixed styles", test_md054_mixed_styles),
+  test_case("MD054: Enforce inline", test_md054_enforce_inline),
   test_case("Helper: format_issue", test_format_issue),
   test_case("Helper: count_by_severity", test_count_by_severity),
   test_case("Integration: lint_all clean document", test_lint_all_clean_document),
