@@ -231,6 +231,100 @@ def test_md004_enforce_plus_style():
   | assert_eq(result[0]["details"]["found"], "dash")
 end
 
+# Test data for MD005 - List item indentation consistency
+def test_md005_consistent_indentation():
+  let config = default_config()
+  | let raw_content = "* Item 1\n* Item 2\n* Item 3\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md005(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md005_inconsistent_ul_ol_at_same_level():
+  let config = default_config()
+  | let raw_content = "* Item 1\n1. Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md005(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD005")
+end
+
+def test_md005_nested_lists_ok():
+  let config = default_config()
+  | let raw_content = "* Item 1\n  * Nested item\n* Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md005(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD006 - Consider starting bulleted lists at the beginning of the line
+def test_md006_list_at_start():
+  let config = default_config()
+  | let raw_content = "* Item 1\n* Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md006(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md006_list_with_indent():
+  let config = default_config()
+  | let raw_content = "\n  * Item 1\n  * Item 2\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md006(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD006")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md006_nested_list_ok():
+  let config = default_config()
+  | let raw_content = "* Item 1\n  * Nested item\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md006(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD007 - Unordered list indentation
+def test_md007_correct_indentation():
+  let config = default_config()
+  | let raw_content = "* Item 1\n  * Nested item\n    * Double nested\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md007(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md007_incorrect_indentation():
+  let config = default_config()
+  | let raw_content = "* Item 1\n   * Nested item (3 spaces)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md007(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD007")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md007_custom_indent():
+  let config = {
+    lint: {
+      rules: ["MD007"],
+      md007: {indent: 4}
+    }
+  }
+  | let raw_content = "* Item 1\n    * Nested item (4 spaces)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md007(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
 # Test data for MD009 - Trailing spaces
 def test_md009_no_trailing_spaces():
   let config = default_config()
@@ -1846,6 +1940,15 @@ end
   test_case("MD004: Enforce dash style", test_md004_enforce_dash_style),
   test_case("MD004: Enforce asterisk style", test_md004_enforce_asterisk_style),
   test_case("MD004: Enforce plus style", test_md004_enforce_plus_style),
+  test_case("MD005: Consistent indentation", test_md005_consistent_indentation),
+  test_case("MD005: Inconsistent UL/OL at same level", test_md005_inconsistent_ul_ol_at_same_level),
+  test_case("MD005: Nested lists OK", test_md005_nested_lists_ok),
+  test_case("MD006: List at start", test_md006_list_at_start),
+  test_case("MD006: List with indent", test_md006_list_with_indent),
+  test_case("MD006: Nested list OK", test_md006_nested_list_ok),
+  test_case("MD007: Correct indentation", test_md007_correct_indentation),
+  test_case("MD007: Incorrect indentation", test_md007_incorrect_indentation),
+  test_case("MD007: Custom indent", test_md007_custom_indent),
   test_case("MD009: No trailing spaces", test_md009_no_trailing_spaces),
   test_case("MD009: Single trailing space", test_md009_single_trailing_space),
   test_case("MD009: Multiple trailing spaces", test_md009_multiple_trailing_spaces),
