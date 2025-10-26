@@ -11,7 +11,7 @@ include "toml"
       lint: {
         "output-format": "detailed",
         quiet: false,
-        rules: ["MD001", "MD002", "MD003", "MD004", "MD005", "MD006", "MD007", "MD009", "MD010", "MD012", "MD013", "MD014", "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026", "MD027", "MD028", "MD029", "MD030", "MD031", "MD032", "MD033", "MD034", "MD035", "MD036", "MD037", "MD040"],
+        rules: ["MD001", "MD002", "MD003", "MD004", "MD005", "MD006", "MD007", "MD009", "MD010", "MD011", "MD012", "MD013", "MD014", "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026", "MD027", "MD028", "MD029", "MD030", "MD031", "MD032", "MD033", "MD034", "MD035", "MD036", "MD037", "MD038", "MD039", "MD040", "MD041", "MD046", "MD047"],
         md002: {level: 1},
         md003: {style: "consistent"},
         md004: {style: "consistent"},
@@ -36,7 +36,9 @@ include "toml"
         md033: {"allowed-elements": []},
         md035: {style: "consistent"},
         md036: {punctuation: ".,;:!?。，；：！？"},
-        md040: {enabled: true}
+        md040: {enabled: true},
+        md041: {level: 1},
+        md046: {style: "consistent"}
       }
     }
   end
@@ -84,7 +86,9 @@ include "toml"
       md033: try: lint_config["md033"] catch: defaults["lint"]["md033"],
       md035: try: lint_config["md035"] catch: defaults["lint"]["md035"],
       md036: try: lint_config["md036"] catch: defaults["lint"]["md036"],
-      md040: try: lint_config["md040"] catch: defaults["lint"]["md040"]
+      md040: try: lint_config["md040"] catch: defaults["lint"]["md040"],
+      md041: try: lint_config["md041"] catch: defaults["lint"]["md041"],
+      md046: try: lint_config["md046"] catch: defaults["lint"]["md046"]
     }
     | {lint: merged_lint}
   end
@@ -500,9 +504,24 @@ else:
   end
 
 # MD011: Reversed link syntax
-# TODO: Implement check for reversed link syntax
-# Requires analysis of text patterns
-| def md011(content): []
+| def md011(md, lines, config):
+    let rule_config = get_rule_config(config, "md011")
+    |     # Check for reversed link syntax: (link)[text] instead of [text](link)
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      |       # Pattern: (something)[something]
+      let has_reversed = regex_match(line, "\\([^)]+\\)\\[[^\\]]+\\]")
+      | if (has_reversed):
+          {
+            rule: "MD011",
+            name: "no-reversed-links",
+            severity: "error",
+            message: "Reversed link syntax (use [text](url) instead of (url)[text])",
+            line: i + 1,
+            details: {}
+          }
+        else: None
+    end | compact()
   end
 
 # MD012: Multiple consecutive blank lines
@@ -1409,15 +1428,46 @@ else:
   end
 
 # MD038: Spaces inside code span elements
-# TODO: Implement check for spaces inside code spans
-# Requires access to raw markdown text
-| def md038(content): []
+| def md038(md, lines, config):
+    let rule_config = get_rule_config(config, "md038")
+    |     # Check for spaces inside code spans: ` text ` or `  text`
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      |       # Pattern: backtick followed by space(s) or space(s) before closing backtick
+      let has_leading_space = regex_match(line, "`\\s+[^`]+`")
+      | let has_trailing_space = regex_match(line, "`[^`]+\\s+`")
+      | if (has_leading_space || has_trailing_space):
+          {
+            rule: "MD038",
+            name: "no-space-in-code",
+            severity: "error",
+            message: "Spaces inside code span elements",
+            line: i + 1,
+            details: {}
+          }
+        else: None
+    end | compact()
   end
 
 # MD039: Spaces inside link text
-# TODO: Implement check for spaces inside link text
-# Requires access to raw markdown text
-| def md039(content): []
+| def md039(md, lines, config):
+    let rule_config = get_rule_config(config, "md039")
+    |     # Check for spaces inside link text: [ text ](url)
+    foreach (i, range(0, len(lines) - 1, 1)):
+      let line = lines[i]
+      |       # Pattern: [ followed by space or space before ]
+      let has_space = regex_match(line, "\\[\\s+[^\\]]+\\]\\([^)]+\\)|\\[[^\\]]+\\s+\\]\\([^)]+\\)")
+      | if (has_space):
+          {
+            rule: "MD039",
+            name: "no-space-in-links",
+            severity: "error",
+            message: "Spaces inside link text",
+            line: i + 1,
+            details: {}
+          }
+        else: None
+    end | compact()
   end
 
 # MD040: Fenced code blocks should have a language specified
@@ -1447,19 +1497,130 @@ else:
   end
 
 # MD041: First line in file should be a top level header
-| def md041(content): []
+| def md041(md, lines, config):
+    let rule_config = get_rule_config(config, "md041")
+    | let level = try: rule_config["level"] catch: 1
+    |     # Check if first non-empty line is a top-level heading
+    if (is_empty(lines)): []
+    else:
+      do
+        # Find first non-empty line
+        let first_non_empty = do
+                  foreach (i, range(0, len(lines) - 1, 1)):
+                            let line = lines[i]
+                            | let trimmed = trim(line)
+                            | if (!is_empty(trimmed)): trimmed else: None
+                          end | compact() | first()
+                end
+        | if (is_none(first_non_empty)): []
+          else:
+            do
+              # Check if it's a heading of the expected level
+              let expected_prefix = do
+                              let hashes = ""
+                              | foreach (i, range(0, level - 1, 1)):
+                                  let hashes = s"${hashes}#"
+                                  | hashes
+                                end | last()
+                            end
+              | let is_correct = starts_with(first_non_empty, s"${expected_prefix} ")
+              | if (!is_correct):
+                  [{
+                    rule: "MD041",
+                    name: "first-line-heading",
+                    severity: "error",
+                    message: s"First line should be a top-level heading (h${level})",
+                    line: 1,
+                    details: {level: level}
+                  }]
+                else: []
+            end
+      end
   end
 
 # MD046: Code block style
-# TODO: Implement code block style consistency check
-# Requires access to raw markdown text
-| def md046(content): []
+| def md046(md, lines, config):
+    let rule_config = get_rule_config(config, "md046")
+    | let style = try: rule_config["style"] catch: "consistent"
+    |     # Detect code block styles: fenced (```) or indented (4 spaces)
+    let code_blocks = []
+    | let i = 0
+    | let code_blocks = do
+          foreach (idx, range(0, len(lines) - 1, 1)):
+                let line = lines[idx]
+                | let trimmed = trim(line)
+                | let is_fenced = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+                | let is_indented = regex_match(line, "^    \\S+") && !is_empty(trimmed)
+                | if (is_fenced):
+                    {line: idx + 1, style: "fenced"}
+                  elif (is_indented):
+                    {line: idx + 1, style: "indented"}
+                  else: None
+              end | compact()
+        end
+    |     # Check consistency if style is "consistent"
+    if (style == "consistent"):
+      do
+        if (len(code_blocks) > 1):
+          do
+            let first_style = first(code_blocks)["style"]
+            | foreach (block, code_blocks):
+                if (block["style"] != first_style):
+                  do
+                    let block_style = block["style"]
+                    | {
+                      rule: "MD046",
+                      name: "code-block-style",
+                      severity: "error",
+                      message: s"Code block style should be consistent (found ${block_style}, expected ${first_style})",
+                      line: block["line"],
+                      details: {expected: first_style, found: block_style}
+                    }
+                  end
+                else: None
+              end | compact()
+          end
+        else: []
+      end
+    else:
+      # Check if all blocks match the specified style
+      foreach (block, code_blocks):
+        if (block["style"] != style):
+          do
+            let block_style = block["style"]
+            | {
+              rule: "MD046",
+              name: "code-block-style",
+              severity: "error",
+              message: s"Code block style should be ${style} (found ${block_style})",
+              line: block["line"],
+              details: {expected: style, found: block_style}
+            }
+          end
+        else: None
+      end | compact()
   end
 
 # MD047: File should end with a single newline character
-# TODO: Implement check for file ending
-# Requires access to raw markdown text
-| def md047(content): []
+| def md047(md, lines, config):
+    let rule_config = get_rule_config(config, "md047")
+    |     # Check if file ends with exactly one newline
+    if (is_empty(lines)): []
+    else:
+      do
+        let last_line = last(lines)
+        |         # If last line is not empty, file doesn't end with newline
+        if (!is_empty(last_line)):
+          [{
+            rule: "MD047",
+            name: "single-trailing-newline",
+            severity: "error",
+            message: "Files should end with a single newline character",
+            line: len(lines),
+            details: {}
+          }]
+        else: []
+      end
   end
 
 # Format a single issue for display
@@ -1504,7 +1665,7 @@ else:
     | let md007_issues = if (is_rule_enabled(config, "MD007")): md007(md, lines, config) else: []
     | let md009_issues = if (is_rule_enabled(config, "MD009")): md009(md, lines, config) else: []
     | let md010_issues = if (is_rule_enabled(config, "MD010")): md010(md, lines, config) else: []
-    | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md) else: []
+    | let md011_issues = if (is_rule_enabled(config, "MD011")): md011(md, lines, config) else: []
     | let md012_issues = if (is_rule_enabled(config, "MD012")): md012(md, lines, config) else: []
     | let md013_issues = if (is_rule_enabled(config, "MD013")): md013(md, lines, config) else: []
     | let md014_issues = if (is_rule_enabled(config, "MD014")): md014(md, lines, config) else: []
@@ -1528,12 +1689,12 @@ else:
     | let md035_issues = if (is_rule_enabled(config, "MD035")): md035(md, lines, config) else: []
     | let md036_issues = if (is_rule_enabled(config, "MD036")): md036(md, lines, config) else: []
     | let md037_issues = if (is_rule_enabled(config, "MD037")): md037(md, lines, config) else: []
-    | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(md) else: []
-    | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(md) else: []
+    | let md038_issues = if (is_rule_enabled(config, "MD038")): md038(md, lines, config) else: []
+    | let md039_issues = if (is_rule_enabled(config, "MD039")): md039(md, lines, config) else: []
     | let md040_issues = if (is_rule_enabled(config, "MD040")): md040(md, config) else: []
-    | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(md) else: []
-    | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(md) else: []
-    | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(md) else: []
+    | let md041_issues = if (is_rule_enabled(config, "MD041")): md041(md, lines, config) else: []
+    | let md046_issues = if (is_rule_enabled(config, "MD046")): md046(md, lines, config) else: []
+    | let md047_issues = if (is_rule_enabled(config, "MD047")): md047(md, lines, config) else: []
     | let all_issues = flatten([
       md001_issues, md002_issues,
       md003_issues, md004_issues,
