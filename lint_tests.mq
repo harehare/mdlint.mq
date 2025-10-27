@@ -2255,6 +2255,213 @@ def test_md054_enforce_inline():
   | assert_eq(result[0]["details"]["expected"], "inline")
 end
 
+# Test data for MD055 - Table pipe style
+def test_md055_consistent_leading_and_trailing():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md055(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md055_inconsistent_pipes():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\nA    | B    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md055(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD055")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md055_no_outer_pipes():
+  let config = default_config()
+  | let raw_content = "Col1 | Col2\n---- | ----\nA    | B\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md055(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD056 - Table column count
+def test_md056_consistent_columns():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n| C    | D    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md056(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md056_inconsistent_columns():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n| C    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md056(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD056")
+  | assert_eq(result[0]["severity"], "error")
+end
+
+def test_md056_disabled():
+  let config = {
+    lint: {
+      rules: ["MD056"],
+      md056: {enabled: false}
+    }
+  }
+  | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md056(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD058 - Tables should be surrounded by blank lines
+def test_md058_table_with_blank_lines():
+  let config = default_config()
+  | let raw_content = "Some text\n\n| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md058_table_without_blank_line_above():
+  let config = default_config()
+  | let raw_content = "Some text\n| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD058")
+  | assert_eq(result[0]["severity"], "error")
+  | assert_eq(result[0]["details"]["position"], "above")
+end
+
+def test_md058_table_without_blank_line_below():
+  let config = default_config()
+  | let raw_content = "Some text\n\n| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD058")
+  | assert_eq(result[0]["severity"], "error")
+  | assert_eq(result[0]["details"]["position"], "below")
+end
+
+def test_md058_disabled():
+  let config = {
+    lint: {
+      rules: ["MD058"],
+      md058: {enabled: false}
+    }
+  }
+  | let raw_content = "Some text\n| Col1 | Col2 |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD059 - Link text should be descriptive
+def test_md059_descriptive_link():
+  let config = default_config()
+  | let raw_content = "[Learn more about our services](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md059(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md059_click_here_link():
+  let config = default_config()
+  | let raw_content = "[click here](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md059(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD059")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md059_here_link():
+  let config = default_config()
+  | let raw_content = "[here](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md059(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD059")
+end
+
+def test_md059_link_link():
+  let config = default_config()
+  | let raw_content = "[link](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md059(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD059")
+end
+
+def test_md059_disabled():
+  let config = {
+    lint: {
+      rules: ["MD059"],
+      md059: {enabled: false}
+    }
+  }
+  | let raw_content = "[click here](https://example.com)\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md059(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+# Test data for MD060 - Table column style
+def test_md060_consistent_left_alignment():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| :--- | :--- |\n| A    | B    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md060(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md060_consistent_center_alignment():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| :--: | :--: |\n| A    | B    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md060(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
+def test_md060_inconsistent_alignment():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| :--- | :--: |\n| A    | B    |\n\n| Col3 | Col4 |\n| ---: | ---- |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md060(content, lines, config)
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD060")
+  | assert_eq(result[0]["severity"], "warning")
+end
+
+def test_md060_no_alignment():
+  let config = default_config()
+  | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md060(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
 # Test helper functions
 def test_format_issue():
   let issue = {
@@ -2598,6 +2805,25 @@ end
   test_case("MD054: Consistent reference", test_md054_consistent_reference),
   test_case("MD054: Mixed styles", test_md054_mixed_styles),
   test_case("MD054: Enforce inline", test_md054_enforce_inline),
+  test_case("MD055: Consistent leading and trailing", test_md055_consistent_leading_and_trailing),
+  test_case("MD055: Inconsistent pipes", test_md055_inconsistent_pipes),
+  test_case("MD055: No outer pipes", test_md055_no_outer_pipes),
+  test_case("MD056: Consistent columns", test_md056_consistent_columns),
+  test_case("MD056: Inconsistent columns", test_md056_inconsistent_columns),
+  test_case("MD056: Disabled", test_md056_disabled),
+  test_case("MD058: Table with blank lines", test_md058_table_with_blank_lines),
+  test_case("MD058: Table without blank line above", test_md058_table_without_blank_line_above),
+  test_case("MD058: Table without blank line below", test_md058_table_without_blank_line_below),
+  test_case("MD058: Disabled", test_md058_disabled),
+  test_case("MD059: Descriptive link", test_md059_descriptive_link),
+  test_case("MD059: Click here link", test_md059_click_here_link),
+  test_case("MD059: Here link", test_md059_here_link),
+  test_case("MD059: Link link", test_md059_link_link),
+  test_case("MD059: Disabled", test_md059_disabled),
+  test_case("MD060: Consistent left alignment", test_md060_consistent_left_alignment),
+  test_case("MD060: Consistent center alignment", test_md060_consistent_center_alignment),
+  test_case("MD060: Inconsistent alignment", test_md060_inconsistent_alignment),
+  test_case("MD060: No alignment", test_md060_no_alignment),
   test_case("Helper: format_issue", test_format_issue),
   test_case("Helper: count_by_severity", test_count_by_severity),
   test_case("Integration: lint_all clean document", test_lint_all_clean_document),
