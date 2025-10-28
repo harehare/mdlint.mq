@@ -2368,6 +2368,36 @@ def test_md058_disabled():
   | assert_eq(len(result), 0)
 end
 
+def test_md058_pipe_in_text_not_table():
+  let config = default_config()
+  | let raw_content = "Some text\nChoose A | B for the option\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  # Should not detect this as a table since there's no separator line
+  | assert_eq(len(result), 0)
+end
+
+def test_md058_incomplete_table_without_separator():
+  let config = default_config()
+  | let raw_content = "Some text\n| Col1 | Col2 |\n| A    | B    |\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  # Should not detect this as a table since there's no separator line
+  | assert_eq(len(result), 0)
+end
+
+def test_md058_valid_table_formats():
+  let config = default_config()
+  | let raw_content = "Some text\n\n| Col1 | Col2 |\n|------|------|\n| A    | B    |\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md058(content, lines, config)
+  # Valid table with proper formatting should pass
+  | assert_eq(len(result), 0)
+end
+
 # Test data for MD059 - Link text should be descriptive
 def test_md059_descriptive_link():
   let config = default_config()
@@ -2815,6 +2845,9 @@ end
   test_case("MD058: Table without blank line above", test_md058_table_without_blank_line_above),
   test_case("MD058: Table without blank line below", test_md058_table_without_blank_line_below),
   test_case("MD058: Disabled", test_md058_disabled),
+  test_case("MD058: Pipe in text not table", test_md058_pipe_in_text_not_table),
+  test_case("MD058: Incomplete table without separator", test_md058_incomplete_table_without_separator),
+  test_case("MD058: Valid table formats", test_md058_valid_table_formats),
   test_case("MD059: Descriptive link", test_md059_descriptive_link),
   test_case("MD059: Click here link", test_md059_click_here_link),
   test_case("MD059: Here link", test_md059_here_link),

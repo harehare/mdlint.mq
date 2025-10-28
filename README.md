@@ -1,6 +1,17 @@
-# lint.mq
+<h1 align="center">lint.mq</h1>
 
-A Markdown linter implementing markdownlint rules in the `mq` language.
+<p align="center">A Markdown linter implementing 50 markdownlint rules in the <code>mq</code> language.</p>
+
+## Quick Start
+
+```mq
+include "lint"
+
+# Lint a Markdown file
+let content = to_markdown(read_file("document.md"))
+| let result = lint_all(content)
+| generate_report(result)
+```
 
 ## Overview
 
@@ -8,142 +19,113 @@ A Markdown linter implementing markdownlint rules in the `mq` language.
 
 ## Features
 
-- **Rule-based Linting**: Implements markdownlint rules to ensure Markdown quality
+- **50 Linting Rules**: Comprehensive implementation of markdownlint rules covering headings, lists, code blocks, links, tables, and more
 - **Detailed Error Reports**: Provides clear, actionable feedback with line numbers and severity levels
+- **Configurable**: Fully customizable via TOML configuration files
 - **Severity Levels**: Categorizes issues as errors, warnings, or info
 - **Formatted Output**: Pretty-printed reports with icons and summaries
-- **Comprehensive Test Suite**: Includes test cases for all implemented rules
+- **Comprehensive Test Suite**: Extensive test coverage for all implemented rules
 
 ## Currently Implemented Rules
 
-### MD001 - Heading Increment
+This linter implements **50 markdownlint rules** organized into the following categories:
 
-**Rule Name**: `heading-increment`
-**Severity**: Error
+### 📑 Headings (13 rules)
 
-Ensures that heading levels increment by one level at a time. For example, you shouldn't skip from H1 directly to H3.
+| Rule  | Name                             | Description                                               |
+| ----- | -------------------------------- | --------------------------------------------------------- |
+| MD001 | heading-increment                | Heading levels should increment by one level at a time    |
+| MD002 | first-header-h1                  | First heading should be a top-level heading               |
+| MD003 | heading-style                    | Heading style should be consistent                        |
+| MD018 | no-missing-space-atx             | No space after hash on atx style heading                  |
+| MD019 | no-multiple-space-atx            | Multiple spaces after hash on atx style heading           |
+| MD020 | no-missing-space-closed-atx      | No space inside hashes on closed atx style heading        |
+| MD021 | no-multiple-space-closed-atx     | Multiple spaces inside hashes on closed atx style heading |
+| MD022 | blanks-around-headings           | Headings should be surrounded by blank lines              |
+| MD023 | heading-start-left               | Headings must start at the beginning of the line          |
+| MD024 | no-duplicate-heading             | Multiple headings with the same content                   |
+| MD025 | single-title/single-h1           | Multiple top-level headings in the same document          |
+| MD026 | no-trailing-punctuation          | Trailing punctuation in heading                           |
+| MD041 | first-line-heading/first-line-h1 | First line in file should be a top-level heading          |
 
-**Example:**
+### 📋 Lists (8 rules)
 
-```markdown
-# Heading 1
-### Heading 3  ❌ Error: Skips H2
-```
+| Rule  | Name                 | Description                                                   |
+| ----- | -------------------- | ------------------------------------------------------------- |
+| MD004 | ul-style             | Unordered list style should be consistent                     |
+| MD005 | list-indent          | Inconsistent indentation for list items at the same level     |
+| MD006 | ul-start-left        | Consider starting bulleted lists at the beginning of the line |
+| MD007 | ul-indent            | Unordered list indentation                                    |
+| MD029 | ol-prefix            | Ordered list item prefix                                      |
+| MD030 | list-marker-space    | Spaces after list markers                                     |
+| MD031 | blanks-around-fences | Fenced code blocks should be surrounded by blank lines        |
+| MD032 | blanks-around-lists  | Lists should be surrounded by blank lines                     |
 
-**Correct:**
+### 🔤 Whitespace & Formatting (6 rules)
 
-```markdown
-# Heading 1
-## Heading 2  ✅ Correct
-```
+| Rule  | Name                         | Description                                      |
+| ----- | ---------------------------- | ------------------------------------------------ |
+| MD009 | no-trailing-spaces           | Trailing spaces                                  |
+| MD010 | no-hard-tabs                 | Hard tabs                                        |
+| MD012 | no-multiple-blanks           | Multiple consecutive blank lines                 |
+| MD013 | line-length                  | Line length                                      |
+| MD027 | no-multiple-space-blockquote | Multiple spaces after blockquote symbol          |
+| MD047 | single-trailing-newline      | Files should end with a single newline character |
 
-### MD002 - First Header Should Be H1
+### 💻 Code Blocks (4 rules)
 
-**Rule Name**: `first-header-h1`
-**Severity**: Error
+| Rule  | Name                 | Description                                              |
+| ----- | -------------------- | -------------------------------------------------------- |
+| MD014 | commands-show-output | Dollar signs used before commands without showing output |
+| MD040 | fenced-code-language | Fenced code blocks should have a language specified      |
+| MD046 | code-block-style     | Code block style should be consistent                    |
+| MD048 | code-fence-style     | Code fence style should be consistent                    |
 
-The first heading in the document should be a top-level (H1) heading.
+### 🔗 Links & Images (7 rules)
 
-**Example:**
+| Rule  | Name                             | Description                                                   |
+| ----- | -------------------------------- | ------------------------------------------------------------- |
+| MD011 | no-reversed-links                | Reversed link syntax                                          |
+| MD034 | no-bare-urls                     | Bare URL used                                                 |
+| MD039 | no-space-in-links                | Spaces inside link text                                       |
+| MD051 | link-fragments                   | Link fragments should be valid                                |
+| MD052 | reference-links-images           | Reference links and images should use a label that is defined |
+| MD053 | link-image-reference-definitions | Link and image reference definitions should be needed         |
+| MD054 | link-image-style                 | Link and image style should be consistent                     |
+| MD059 | link-text                        | Link text should be descriptive                               |
 
-```markdown
-## Introduction  ❌ Error: First header should be H1
-```
+### ✨ Inline Elements (3 rules)
 
-**Correct:**
+| Rule  | Name                 | Description                      |
+| ----- | -------------------- | -------------------------------- |
+| MD033 | no-inline-html       | Inline HTML                      |
+| MD037 | no-space-in-emphasis | Spaces inside emphasis markers   |
+| MD038 | no-space-in-code     | Spaces inside code span elements |
 
-```markdown
-# Introduction  ✅ Correct
-```
+### 🎨 Style & Emphasis (3 rules)
 
-### MD024 - No Duplicate Headers
+| Rule  | Name                   | Description                                |
+| ----- | ---------------------- | ------------------------------------------ |
+| MD035 | hr-style               | Horizontal rule style should be consistent |
+| MD036 | no-emphasis-as-heading | Emphasis used instead of a heading         |
+| MD049 | emphasis-style         | Emphasis style should be consistent        |
+| MD050 | strong-style           | Strong style should be consistent          |
 
-**Rule Name**: `no-duplicate-header`
-**Severity**: Warning
+### 💬 Blockquotes (2 rules)
 
-Multiple headers with the same content can be confusing and should be avoided.
+| Rule  | Name                         | Description                             |
+| ----- | ---------------------------- | --------------------------------------- |
+| MD027 | no-multiple-space-blockquote | Multiple spaces after blockquote symbol |
+| MD028 | no-blanks-blockquote         | Blank line inside blockquote            |
 
-**Example:**
+### 📊 Tables (4 rules)
 
-```markdown
-# Setup
-## Installation
-# Setup  ❌ Warning: Duplicate header
-```
-
-### MD025 - Single H1
-
-**Rule Name**: `single-h1`
-**Severity**: Error
-
-Documents should have only one top-level (H1) heading.
-
-**Example:**
-
-```markdown
-# Introduction
-## Details
-# Conclusion  ❌ Error: Multiple H1 headers
-```
-
-### MD026 - No Trailing Punctuation
-
-**Rule Name**: `no-trailing-punctuation`
-**Severity**: Warning
-
-Headers should not end with punctuation marks (`.`, `,`, `:`, `;`, `!`, `?`).
-
-**Example:**
-
-```markdown
-# Introduction.  ❌ Warning: Trailing punctuation
-# What is this?  ❌ Warning: Trailing punctuation
-```
-
-**Correct:**
-
-```markdown
-# Introduction  ✅ Correct
-# What is this  ✅ Correct
-```
-
-### MD033 - No Inline HTML
-
-**Rule Name**: `no-inline-html`
-**Severity**: Warning
-
-Inline HTML should be avoided in Markdown documents.
-
-**Example:**
-
-```markdown
-# Header
-
-<div>Some content</div>  ❌ Warning: Inline HTML
-```
-
-### MD040 - Fenced Code Language
-
-**Rule Name**: `fenced-code-language`
-**Severity**: Warning
-
-Fenced code blocks should have a language specified for proper syntax highlighting.
-
-**Example:**
-
-````markdown
-```
-code without language  ❌ Warning: No language specified
-```
-````
-
-**Correct:**
-
-````markdown
-```javascript
-console.log("Hello");  ✅ Correct
-```
-````
+| Rule  | Name                 | Description                                |
+| ----- | -------------------- | ------------------------------------------ |
+| MD055 | table-pipe-style     | Table pipe style should be consistent      |
+| MD056 | table-column-count   | Table column count should be consistent    |
+| MD058 | blanks-around-tables | Tables should be surrounded by blank lines |
+| MD060 | table-column-style   | Table column alignment style               |
 
 ## Configuration
 
@@ -161,35 +143,107 @@ output-format = "detailed"
 # Quiet mode: suppress informational messages
 quiet = false
 
-# Rules to enable (comment out to disable a rule)
+# Rules to enable (all 50 rules are enabled by default)
 rules = [
-  "MD001",  # heading-increment
-  "MD002",  # first-header-h1
-  "MD024",  # no-duplicate-header
-  "MD025",  # single-h1
-  "MD026",  # no-trailing-punctuation
-  "MD033",  # no-inline-html
-  "MD040",  # fenced-code-language
+  "MD001", "MD002", "MD003", "MD004", "MD005", "MD006", "MD007",
+  "MD009", "MD010", "MD011", "MD012", "MD013", "MD014",
+  "MD018", "MD019", "MD020", "MD021", "MD022", "MD023", "MD024", "MD025", "MD026",
+  "MD027", "MD028", "MD029", "MD030", "MD031", "MD032", "MD033", "MD034", "MD035",
+  "MD036", "MD037", "MD038", "MD039", "MD040", "MD041",
+  "MD046", "MD047", "MD048", "MD049", "MD050",
+  "MD051", "MD052", "MD053", "MD054", "MD055", "MD056",
+  "MD058", "MD059", "MD060"
 ]
 
-# Rule-specific configuration
+# Rule-specific configuration examples
 [lint.md002]
 level = 1  # Expected level for first header
 
+[lint.md003]
+style = "consistent"  # "consistent", "atx", "atx_closed", "setext", "setext_with_atx", "setext_with_atx_closed"
+
+[lint.md004]
+style = "consistent"  # "consistent", "asterisk", "plus", "dash"
+
+[lint.md007]
+indent = 2  # Spaces for unordered list indentation
+
+[lint.md009]
+br_spaces = 2  # Number of spaces for line break
+strict = false  # Strict mode for trailing spaces
+
+[lint.md010]
+code_blocks = true  # Check hard tabs in code blocks
+
+[lint.md012]
+maximum = 1  # Maximum consecutive blank lines
+
+[lint.md013]
+line_length = 80  # Maximum line length
+code_blocks = true  # Check line length in code blocks
+tables = true  # Check line length in tables
+headings = true  # Check line length in headings
+
+[lint.md022]
+lines_above = 1  # Blank lines above headings
+lines_below = 1  # Blank lines below headings
+
 [lint.md024]
-siblings-only = false  # Check all headers or only siblings
+siblings-only = false  # Check only sibling headings
 
 [lint.md025]
-level = 1  # Top level header number
+level = 1  # Top level heading number
 
 [lint.md026]
-punctuation = ".,;:!?"  # Punctuation to flag in headers
+punctuation = ".,;:!?"  # Punctuation to flag in headings
+
+[lint.md029]
+style = "one_or_ordered"  # "one", "ordered", "one_or_ordered"
+
+[lint.md030]
+ul_single = 1  # Spaces after unordered list marker for single-line items
+ol_single = 1  # Spaces after ordered list marker for single-line items
+ul_multi = 1   # Spaces after unordered list marker for multi-line items
+ol_multi = 1   # Spaces after ordered list marker for multi-line items
 
 [lint.md033]
-allowed-elements = []  # HTML elements to allow (empty = none)
+allowed-elements = []  # HTML elements to allow
 
-[lint.md040]
-enabled = true  # Require language specification for code blocks
+[lint.md035]
+style = "consistent"  # "consistent" or specific style
+
+[lint.md036]
+punctuation = ".,;:!?。，；：！？"  # Punctuation for emphasis check
+
+[lint.md046]
+style = "consistent"  # "consistent", "fenced", "indented"
+
+[lint.md048]
+style = "consistent"  # "consistent", "backtick", "tilde"
+
+[lint.md049]
+style = "consistent"  # "consistent", "asterisk", "underscore"
+
+[lint.md050]
+style = "consistent"  # "consistent", "asterisk", "underscore"
+
+[lint.md054]
+style = "consistent"  # "consistent", "inline", "full", "collapsed", "shortcut"
+
+[lint.md055]
+style = "consistent"  # "consistent", "leading_and_trailing", "leading_only", "trailing_only", "no_leading_or_trailing"
+
+[lint.md056]
+enabled = true  # Check table column count consistency
+
+[lint.md058]
+enabled = true  # Tables should be surrounded by blank lines
+
+[lint.md059]
+enabled = true  # Check link text descriptiveness
+
+[lint.md060]
+style = "consistent"  # "consistent", "left", "right", "center", "none"
 ```
 
 ### Loading Configuration
@@ -209,31 +263,13 @@ let content = to_markdown(read_file("document.md"))
 
 ### Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `output-format` | string | "detailed" | Output format for reports |
-| `quiet` | boolean | false | Suppress informational messages |
-| `rules` | array | all enabled | List of rules to enable |
+| Option          | Type    | Default      | Description                                         |
+| --------------- | ------- | ------------ | --------------------------------------------------- |
+| `output-format` | string  | "detailed"   | Output format for reports ("detailed" or "concise") |
+| `quiet`         | boolean | false        | Suppress informational messages                     |
+| `rules`         | array   | all 50 rules | List of rules to enable                             |
 
-### Rule-Specific Options
-
-**MD002** - First header level
-- `level` (integer, default: 1): Expected level for the first header
-
-**MD024** - Duplicate headers
-- `siblings-only` (boolean, default: false): Only check sibling headers
-
-**MD025** - Multiple top-level headers
-- `level` (integer, default: 1): Level considered as "top-level"
-
-**MD026** - Trailing punctuation
-- `punctuation` (string, default: ".,;:!?"): Characters to flag
-
-**MD033** - Inline HTML
-- `allowed-elements` (array, default: []): HTML tags to allow
-
-**MD040** - Code block language
-- `enabled` (boolean, default: true): Require language specification
+> **Note**: Each rule can be configured individually. See the configuration file example above for all available rule-specific options.
 
 ## Usage
 
@@ -274,15 +310,26 @@ let content = to_markdown("# Title\n\n## Section\n")
 
 ### Individual Rule Functions
 
-Each rule can also be called individually:
+Each of the 50 rules can be called individually. All rule functions follow the signature:
 
-- `md001(content)` - Check heading increment
-- `md002(content)` - Check first header is H1
-- `md024(content)` - Check for duplicate headers
-- `md025(content)` - Check for multiple H1s
-- `md026(content)` - Check for trailing punctuation
-- `md033(content)` - Check for inline HTML
-- `md040(content)` - Check code block language specification
+```mq
+md###(markdown_content, lines, config) -> array of issues
+```
+
+**Available rules:**
+- MD001, MD002, MD003, MD004, MD005, MD006, MD007, MD009, MD010, MD011, MD012, MD013, MD014
+- MD018, MD019, MD020, MD021, MD022, MD023, MD024, MD025, MD026, MD027, MD028, MD029, MD030
+- MD031, MD032, MD033, MD034, MD035, MD036, MD037, MD038, MD039, MD040, MD041
+- MD046, MD047, MD048, MD049, MD050, MD051, MD052, MD053, MD054, MD055, MD056
+- MD058, MD059, MD060
+
+**Example:**
+```mq
+let content = to_markdown("# Title\n\n### Skipped Level\n")
+| let lines = split("# Title\n\n### Skipped Level\n", "\n")
+| let config = default_config()
+| let issues = md001(content, lines, config)  # Check heading increment
+```
 
 ### Helper Functions
 
@@ -336,15 +383,16 @@ mq lint_tests.mq
 
 The test suite includes:
 
-- **Rule Tests**: Tests for all 7 implemented rules (MD001, MD002, MD024, MD025, MD026, MD033, MD040)
+- **Rule Tests**: Comprehensive tests for all 50 implemented rules
   - Valid cases (should pass without issues)
   - Invalid cases (should detect issues)
-- **Helper Function Tests**: Tests for `format_issue` and `count_by_severity`
+  - Edge cases and configuration options
+- **Helper Function Tests**: Tests for utility functions like `format_issue` and `count_by_severity`
 - **Integration Tests**: Tests for `lint_all` with clean and problematic documents
-- **Report Generation Tests**: Tests for `generate_report` with and without issues
+- **Report Generation Tests**: Tests for `generate_report` with various scenarios
 - **Configuration Tests**: Tests for configuration loading, rule enabling/disabling, and custom rule settings
 
-Total: 26 test cases
+The test suite ensures comprehensive coverage of all linting rules and their configurations.
 
 ### Manual Testing
 
@@ -360,14 +408,14 @@ let content = to_markdown(read_file("sample.md"))
 
 ## Future Enhancements
 
-- Additional markdownlint rules (MD003-MD050+)
+- ✅ ~~Additional markdownlint rules~~ (50 rules implemented!)
 - Custom rule definitions
 - Integration with CI/CD pipelines
 - Multiple output formats (JSON, XML, SARIF)
 - Auto-fix capabilities for certain rules
 - Watch mode for continuous linting
-- Enhanced HTML element filtering in MD033
-- Line-level accuracy improvements
+- Performance optimizations for large files
+- Plugin system for custom rules
 
 ## References
 
