@@ -965,6 +965,28 @@ def test_md022_setext_missing_blank():
   | assert_eq(result[0]["rule"], "MD022")
 end
 
+def test_md022_hash_in_code_block():
+  let config = default_config()
+  | let raw_content = "Some text\n\n```bash\n# This is a comment\necho hello\n```\n\nMore text\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  # Should not detect # inside code block as heading
+  | assert_eq(len(result), 0)
+end
+
+def test_md022_heading_outside_code_block():
+  let config = default_config()
+  | let raw_content = "Some text\n# Real Heading\n\n```bash\n# Comment in code\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md022(content, lines, config)
+  # Should detect only the real heading without blank line above
+  | assert_eq(len(result), 1)
+  | assert_eq(result[0]["rule"], "MD022")
+  | assert_eq(result[0]["line"], 2)
+end
+
 # Test data for MD023 - Headers must start at the beginning of the line
 def test_md023_no_indentation():
   let config = default_config()
@@ -2710,6 +2732,8 @@ end
   test_case("MD022: First line OK", test_md022_first_line_ok),
   test_case("MD022: Setext style", test_md022_setext_style),
   test_case("MD022: Setext missing blank", test_md022_setext_missing_blank),
+  test_case("MD022: Hash in code block", test_md022_hash_in_code_block),
+  test_case("MD022: Heading outside code block", test_md022_heading_outside_code_block),
   test_case("MD023: No indentation", test_md023_no_indentation),
   test_case("MD023: Indented ATX header", test_md023_indented_atx_header),
   test_case("MD023: Tab indented header", test_md023_tab_indented_header),

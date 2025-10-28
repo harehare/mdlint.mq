@@ -761,13 +761,25 @@ else:
     let rule_config = get_rule_config(config, "md022")
     | let lines_above = try: rule_config["lines_above"] catch: 1
     | let lines_below = try: rule_config["lines_below"] catch: 1
+    # Get code block ranges from parsed markdown (efficient, O(c) where c = code blocks)
+    | let code_blocks = do md | .code | compact() end
+    | let code_block_ranges = foreach (block, code_blocks):
+          let pos = _get_markdown_position(block)
+          | {start_line: pos["start_line"], end_line: pos["end_line"]}
+        end
+    # Helper to check if line is in any code block
+    | let is_in_code_block = fn(line_num):
+          len(filter(code_block_ranges, fn(range):
+            line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
     | foreach (i, range(0, len(lines) - 1, 1)):
         let line = lines[i]
         | let trimmed = trim(line)
         | let next_line = if (i < len(lines) - 1): lines[i + 1] else: ""
         | let next_trimmed = trim(next_line)
-        # Detect ATX style heading
-        | if (starts_with(trimmed, "#") && !is_empty(trimmed)):
+        # Skip if inside code block (line numbers are 1-based)
+        | let in_code = is_in_code_block(i + 1)
+        # Detect ATX style heading (but not in code blocks)
+        | if (starts_with(trimmed, "#") && !is_empty(trimmed) && !in_code):
             do
               let issues = []
               # Check line above (skip if first line)
@@ -808,8 +820,8 @@ else:
                             else: issues
               | issues
             end
-          # Detect Setext style heading (next line is === or ---)
-          elif (!is_empty(trimmed) && !is_empty(next_trimmed) && regex_match(next_trimmed, "^[=\\-]+$")):
+          # Detect Setext style heading (next line is === or ---), but not in code blocks
+          elif (!is_empty(trimmed) && !is_empty(next_trimmed) && regex_match(next_trimmed, "^[=\\-]+$") && !in_code):
             do
               let issues = []
               # Check line above the heading text (skip if first line)
@@ -2040,6 +2052,7 @@ else:
                                       do
                                         let is_sep = contains(line, "-") && regex_match(trimmed, "^[|: -]+$")
                                         | let parts = split(line, "\\|")
+                                        | debug(parts)
                                         | let cols = len(filter(parts, fn(p): !is_empty(trim(p));))
                                         | {line_num: i + 1, is_table: true, is_sep: is_sep, cols: cols}
                                       end
@@ -2454,4 +2467,6 @@ Found ${total} issues:
 
 " + join(map(issues, format_issue), "\n") | header + summary_text + issue_list
         end
+  end
+
   end
