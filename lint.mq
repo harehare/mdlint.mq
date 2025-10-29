@@ -1991,8 +1991,8 @@ else:
           foreach (i, range(0, len(lines) - 1, 1)):
                 let line = lines[i]
                 | let trimmed = trim(line)
-                # Check if line contains pipes (likely a table row)
-                | if (contains(line, "|") && !is_empty(trimmed)):
+                # Check if line is in table context (not in code blocks or other contexts)
+                | if (is_in_table_context(lines, i) && !is_empty(trimmed)):
                     do
                       # Check for leading and trailing pipes
                       let has_leading = starts_with(trimmed, "|")
