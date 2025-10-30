@@ -2052,7 +2052,6 @@ else:
                                       do
                                         let is_sep = contains(line, "-") && regex_match(trimmed, "^[|: -]+$")
                                         | let parts = split(line, "\\|")
-                                        | debug(parts)
                                         | let cols = len(filter(parts, fn(p): !is_empty(trim(p));))
                                         | {line_num: i + 1, is_table: true, is_sep: is_sep, cols: cols}
                                       end
@@ -2469,4 +2468,4 @@ Found ${total} issues:
         end
   end
 
-  end
+end
