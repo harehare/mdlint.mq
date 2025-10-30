@@ -2468,4 +2468,15 @@ Found ${total} issues:
         end
   end
 
+# Generate JSON formatted report
+| def generate_json_report(lint_result):
+    include "json"
+    | let issues = lint_result[:issues]
+    | let summary = lint_result[:summary]
+    | json_stringify({
+      "summary": summary,
+      "issues": issues
+    })
+  end
+
 end

@@ -29,6 +29,7 @@ Options:
   -v, --version           Show version
   -c, --config FILE       Use custom config file (default: .lintrc.toml)
   -q, --quiet             Quiet mode (suppress info messages)
+  -j, --json              Output results in JSON format
 
 Arguments:
   FILE                    Markdown file(s) to lint (default: all .md files)
@@ -38,6 +39,7 @@ Examples:
   mqlint *.md             Lint all .md files
   mqlint                  Lint all .md files in current directory
   mqlint -c custom.toml   Use custom config file
+  mqlint -j README.md     Output in JSON format
 
 EOF
 }
@@ -49,6 +51,7 @@ show_version() {
 # Default values
 CONFIG_FILE=".lintrc.toml"
 QUIET=false
+JSON_OUTPUT=false
 FILES=()
 
 # Parse arguments
@@ -68,6 +71,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -q|--quiet)
             QUIET=true
+            shift
+            ;;
+        -j|--json)
+            JSON_OUTPUT=true
             shift
             ;;
         -*)
@@ -108,33 +115,68 @@ TOTAL_ERRORS=0
 TOTAL_WARNINGS=0
 LINTED_FILES=0
 
-for file in "${FILES[@]}"; do
-    if [ ! -f "$file" ]; then
-        echo -e "${RED}Error: File '$file' not found${NC}"
-        continue
-    fi
+# JSON output: collect all results
+if [ "$JSON_OUTPUT" = true ]; then
+    JSON_RESULTS="["
+    FIRST_FILE=true
+
+    for file in "${FILES[@]}"; do
+        if [ ! -f "$file" ]; then
+            echo -e "${RED}Error: File '$file' not found${NC}" >&2
+            continue
+        fi
+
+        # Escape the file path for use in mq command
+        ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
+
+        # Run linter with JSON output
+        MQ_SCRIPT="include \"lint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_json_report()"
+
+        if OUTPUT=$(mq -I raw -F json "$MQ_SCRIPT" 2>&1); then
+            if [ "$FIRST_FILE" = false ]; then
+                JSON_RESULTS+=","
+            fi
+            JSON_RESULTS+="{\"file\":\"$file\",\"result\":$OUTPUT}"
+            FIRST_FILE=false
+            LINTED_FILES=$((LINTED_FILES + 1))
+        else
+            echo -e "${RED}Error linting $file:${NC}" >&2
+            echo "$OUTPUT" >&2
+        fi
+    done
+
+    JSON_RESULTS+="]"
+    echo "$JSON_RESULTS"
+else
+    # Text output (original behavior)
+    for file in "${FILES[@]}"; do
+        if [ ! -f "$file" ]; then
+            echo -e "${RED}Error: File '$file' not found${NC}"
+            continue
+        fi
+
+        if [ "$QUIET" = false ]; then
+            echo -e "\n${GREEN}Linting:${NC} $file"
+        fi
+
+        # Escape the file path for use in mq command
+        ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
+
+        # Run linter
+        MQ_SCRIPT="include \"lint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_report()"
+
+        if OUTPUT=$(mq -I raw "$MQ_SCRIPT" 2>&1); then
+            echo "$OUTPUT"
+            LINTED_FILES=$((LINTED_FILES + 1))
+        else
+            echo -e "${RED}Error linting $file:${NC}"
+            echo "$OUTPUT"
+        fi
+    done
 
     if [ "$QUIET" = false ]; then
-        echo -e "\n${GREEN}Linting:${NC} $file"
+        echo -e "\n${GREEN}Linted $LINTED_FILES file(s)${NC}"
     fi
-
-    # Escape the file path for use in mq command
-    ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
-
-    # Run linter
-    MQ_SCRIPT="include \"lint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | let result = lint_all_with_config(content, config) | generate_report(result)"
-
-    if OUTPUT=$(mq -I raw "$MQ_SCRIPT" 2>&1); then
-        echo "$OUTPUT"
-        LINTED_FILES=$((LINTED_FILES + 1))
-    else
-        echo -e "${RED}Error linting $file:${NC}"
-        echo "$OUTPUT"
-    fi
-done
-
-if [ "$QUIET" = false ]; then
-    echo -e "\n${GREEN}Linted $LINTED_FILES file(s)${NC}"
 fi
 
 exit 0
