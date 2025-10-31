@@ -1,4 +1,4 @@
-<h1 align="center">lint.mq</h1>
+<h1 align="center">mdlint.mq</h1>
 
 <p align="center">A Markdown linter implementing 50 markdownlint rules in the <code>mq</code> language.</p>
 
@@ -15,7 +15,7 @@ let content = to_markdown(read_file("document.md"))
 
 ## Overview
 
-`lint.mq` is a linting tool that validates Markdown files against established style rules from [markdownlint](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md). It helps maintain consistent and high-quality Markdown documentation.
+`mdlint.mq` is a linting tool that validates Markdown files against established style rules from [markdownlint](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md). It helps maintain consistent and high-quality Markdown documentation.
 
 ## Features
 
@@ -129,7 +129,7 @@ This linter implements **50 markdownlint rules** organized into the following ca
 
 ## Configuration
 
-lint.mq supports configuration via a TOML file (`.lintrc.toml`) that allows you to customize linting behavior.
+mdlint.mq supports configuration via a TOML file (`.lintrc.toml`) that allows you to customize linting behavior.
 
 ### Configuration File
 
@@ -361,9 +361,9 @@ When no issues are found:
 ## File Structure
 
 ```
-lint.mq/
+mdlint.mq/
 ├── .lintrc.toml      # Configuration file
-├── lint.mq           # Main linter implementation
+├── mdlint.mq           # Main linter implementation
 ├── lint_tests.mq     # Comprehensive test suite
 ├── README.md         # This file
 └── sample.md         # Sample Markdown file for testing

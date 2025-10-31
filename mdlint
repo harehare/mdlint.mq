@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mqlint - Markdown linter using lint.mq
+# mqlint - Markdown linter using mdlint.mq
 #
 # Usage:
 #   mqlint [file.md]              Lint a specific file
@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 
 show_help() {
     cat << EOF
-mqlint - Markdown linter using lint.mq
+mqlint - Markdown linter using mdlint.mq
 
 Usage:
   mqlint [OPTIONS] [FILE...]
@@ -130,7 +130,7 @@ if [ "$JSON_OUTPUT" = true ]; then
         ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
 
         # Run linter with JSON output
-        MQ_SCRIPT="include \"lint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_json_report()"
+        MQ_SCRIPT="include \"mdlint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_json_report()"
 
         if OUTPUT=$(mq -I raw -F text "$MQ_SCRIPT" 2>&1); then
             if [ "$FIRST_FILE" = false ]; then
@@ -163,7 +163,7 @@ else
         ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
 
         # Run linter
-        MQ_SCRIPT="include \"lint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_report()"
+        MQ_SCRIPT="include \"mdlint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_report()"
 
         if OUTPUT=$(mq -I raw "$MQ_SCRIPT" 2>&1); then
             echo "$OUTPUT"

@@ -1,6 +1,6 @@
 # Sample Markdown Document
 
-This is a sample Markdown file for testing the lint.mq linter.
+This is a sample Markdown file for testing the mdlint.mq linter.
 
 ### est
 
@@ -10,7 +10,7 @@ This document demonstrates various Markdown features and may intentionally inclu
 
 ### Background
 
-The lint.mq tool helps maintain consistent Markdown formatting across your documentation.
+The mdlint.mq tool helps maintain consistent Markdown formatting across your documentation.
 
 ## Features
 
@@ -78,7 +78,7 @@ The following section may trigger MD001 if uncommented:
 
 ## Conclusion
 
-This sample file demonstrates various Markdown features and can be used to test the lint.mq linter functionality.
+This sample file demonstrates various Markdown features and can be used to test the mdlint.mq linter functionality.
 
 ### Next Steps
 

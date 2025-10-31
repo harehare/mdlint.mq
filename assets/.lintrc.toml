@@ -1,4 +1,4 @@
-# lint.mq Configuration File
+# mdlint.mq Configuration File
 # This file configures the Markdown linter behavior
 
 [lint]
