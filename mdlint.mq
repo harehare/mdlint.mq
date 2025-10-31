@@ -1225,14 +1225,26 @@ else:
 
 # MD032: Lists should be surrounded by blank lines
 | def md032(md, lines, config):
-    let in_list = false
+    # Get code block ranges from parsed markdown
+    let code_blocks = do md | .code | compact() end
+    | let code_block_ranges = foreach (block, code_blocks):
+          let pos = _get_markdown_position(block)
+          | {start_line: pos["start_line"], end_line: pos["end_line"]}
+        end
+    # Helper to check if line is in any code block
+    | let is_in_code_block = fn(line_num):
+          len(filter(code_block_ranges, fn(range):
+            line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
+    | let in_list = false
     | let list_start = 0
     | foreach (i, range(0, len(lines) - 1, 1)):
         let line = lines[i]
         | let trimmed = trim(line)
         | let is_blank = is_empty(trimmed)
-        # Check if line is a list item
-        | let is_list_item = regex_match(trimmed, "^[\\-\\*\\+] ") || regex_match(trimmed, "^\\d+\\. ")
+        # Skip if inside code block (line numbers are 1-based)
+        | let in_code = is_in_code_block(i + 1)
+        # Check if line is a list item (but not in code blocks)
+        | let is_list_item = if (in_code): false else: regex_match(trimmed, "^[\\-\\*\\+] ") || regex_match(trimmed, "^\\d+\\. ")
         | if (is_list_item && !in_list):
             do
               # Starting a list - check for blank line above
@@ -1777,17 +1789,33 @@ else:
 | def md050(md, lines, config):
     let rule_config = get_rule_config(config, "md050")
     | let style = try: rule_config["style"] catch: "consistent"
+    # Get code block ranges from parsed markdown
+    | let code_blocks = do md | .code | compact() end
+    | let code_block_ranges = foreach (block, code_blocks):
+          let pos = _get_markdown_position(block)
+          | {start_line: pos["start_line"], end_line: pos["end_line"]}
+        end
+    # Helper to check if line is in any code block
+    | let is_in_code_block = fn(line_num):
+          len(filter(code_block_ranges, fn(range):
+            line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
     |  # Detect strong styles: **text** (asterisk) or __text__ (underscore)
     let strongs = do
           foreach (i, range(0, len(lines) - 1, 1)):
                 let line = lines[i]
-                | let has_asterisk = regex_match(line, "\\*\\*[^*]+\\*\\*")
-                | let has_underscore = regex_match(line, "__[^_]+__")
-                |  # Return both if both exist
-                let results = []
-                | let results = if (has_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
-                | let results = if (has_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
-                | results
+                # Skip if inside code block (line numbers are 1-based)
+                | let in_code = is_in_code_block(i + 1)
+                | if (!in_code):
+                    do
+                      let has_asterisk = regex_match(line, "\\*\\*[^*]+\\*\\*")
+                      | let has_underscore = regex_match(line, "__[^_]+__")
+                      |  # Return both if both exist
+                      let results = []
+                      | let results = if (has_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
+                      | let results = if (has_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
+                      | results
+                    end
+                  else: []
               end | flatten() | compact()
         end
     |  # Check consistency

@@ -1,4 +1,4 @@
-include "lint"
+include "mdlint"
 | include "test"
 
 # Test data for MD001 - Heading levels should only increment by one level at a time
@@ -2175,6 +2175,15 @@ def test_md050_enforce_underscore():
   | assert_eq(result[0]["details"]["expected"], "underscore")
 end
 
+def test_md050_ignore_code_block():
+  let config = default_config()
+  | let raw_content = "This is **strong**.\n\n```\nThis is **code** block.\n```\n"
+  | let content = to_markdown(raw_content)
+  | let lines = split(raw_content, "\n")
+  | let result = md050(content, lines, config)
+  | assert_eq(len(result), 0)
+end
+
 # Test data for MD051 - Link fragments should be valid
 def test_md051_valid_fragment():
   let config = default_config()
@@ -2849,6 +2858,7 @@ end
   test_case("MD050: Consistent underscore", test_md050_consistent_underscore),
   test_case("MD050: Mixed styles", test_md050_mixed_styles),
   test_case("MD050: Enforce underscore", test_md050_enforce_underscore),
+  test_case("MD050: Ignore code block", test_md050_ignore_code_block),
   test_case("MD051: Valid fragment", test_md051_valid_fragment),
   test_case("MD051: No fragments", test_md051_no_fragments),
   test_case("MD052: Defined reference", test_md052_defined_reference),
