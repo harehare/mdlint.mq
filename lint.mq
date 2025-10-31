@@ -1296,7 +1296,7 @@ else:
           let issues = []
           | foreach (i, range(0, len(html_nodes) - 1, 1)):
               let html_node = html_nodes[i]
-              | let html_text = to_text(html_node)
+              | let html_text = replace(to_text(html_node), "\"", "\\\"")
               | {
                 rule: "MD033",
                 name: "no-inline-html",
@@ -2470,13 +2470,12 @@ Found ${total} issues:
 
 # Generate JSON formatted report
 | def generate_json_report(lint_result):
-    include "json"
-    | let issues = lint_result[:issues]
+    let issues = lint_result[:issues]
     | let summary = lint_result[:summary]
-    | json_stringify({
+    | {
       "summary": summary,
       "issues": issues
-    })
+    }
   end
 
 end

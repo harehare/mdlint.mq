@@ -132,7 +132,7 @@ if [ "$JSON_OUTPUT" = true ]; then
         # Run linter with JSON output
         MQ_SCRIPT="include \"lint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_json_report()"
 
-        if OUTPUT=$(mq -I raw -F json "$MQ_SCRIPT" 2>&1); then
+        if OUTPUT=$(mq -I raw -F text "$MQ_SCRIPT" 2>&1); then
             if [ "$FIRST_FILE" = false ]; then
                 JSON_RESULTS+=","
             fi
