@@ -1417,78 +1417,68 @@ else:
 # MD036: Emphasis used instead of a header
 | def md036(md, lines, config):
     let rule_config = get_rule_config(config, "md036")
+    | let strong_target = do md | .strong | compact() end
+    | let emphasis_target = do md | .emphasis | compact() end
     | let punctuation = try: rule_config["punctuation"] catch: ".,;:!?。，；：！？"
-    | foreach (i, range(0, len(lines) - 1, 1)):
-        let line = lines[i]
-        | let trimmed = trim(line)
-        # Check if line is entirely emphasized (bold or italic)
-        # Patterns: **text**, *text*, __text__, _text_
-        | let is_bold_asterisk = regex_match(trimmed, "^\\*\\*[^\\*]+\\*\\*$")
-        | let is_italic_asterisk = regex_match(trimmed, "^\\*[^\\*]+\\*$")
-        | let is_bold_underscore = regex_match(trimmed, "^__[^_]+__$")
-        | let is_italic_underscore = regex_match(trimmed, "^_[^_]+_$")
-        | let is_emphasized = is_bold_asterisk || is_italic_asterisk || is_bold_underscore || is_italic_underscore
-        | if (is_emphasized):
-            do
-              # Check if it ends with punctuation
-              let last_char = slice(trimmed, len(trimmed) - 3, len(trimmed) - 2)
-              | let ends_with_punct = contains(punctuation, last_char)
-              | if (!ends_with_punct):
-                  {
-                    rule: "MD036",
-                    name: "no-emphasis-as-heading",
-                    severity: "warning",
-                    message: "Emphasis used instead of a heading",
-                    line: i + 1,
-                    details: {}
-                  }
-                else: None
-            end
+    | foreach (target, strong_target + emphasis_target):
+        let text = to_text(target)
+        | let pos = _get_markdown_position(target)
+        | let last_char = last(trim(text))
+        | let ends_with_punct = contains(punctuation, last_char)
+        | if (!ends_with_punct && pos["start_column"] == 1):
+            {
+              rule: "MD036",
+              name: "no-emphasis-as-heading",
+              severity: "warning",
+              message: "Emphasis used instead of a heading",
+              line: _get_markdown_position(target)["start_line"],
+              details: {}
+            }
           else: None
       end | compact()
   end
 
 # MD037: Spaces inside emphasis markers
 | def md037(md, lines, config):
-    foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      # Check for spaces inside emphasis markers
-      # Patterns: * text *, ** text **, _ text _, __ text __
-      | let has_italic_space = regex_match(line, "\\*\\s+[^\\*]+\\s+\\*") || regex_match(line, "_\\s+[^_]+\\s+_")
-      | let has_bold_space = regex_match(line, "\\*\\*\\s+[^\\*]+\\s+\\*\\*") || regex_match(line, "__\\s+[^_]+\\s+__")
-      | if (has_italic_space || has_bold_space):
-          {
-            rule: "MD037",
-            name: "no-space-in-emphasis",
-            severity: "warning",
-            message: "Spaces inside emphasis markers",
-            line: i + 1,
-            details: {}
-          }
-        else: None
-    end | compact()
+    let targets = do md | select(.strong || .emphasis) | compact() end
+    | foreach (target, targets):
+        let text = do target | .strong || .emphasis | to_text();
+        | let pos = _get_markdown_position(target)
+        | let start_column = if (to_md_name(target) == "strong"): pos["start_column"] + 2 else: pos["start_column"] + 1
+        | let end_column = if (to_md_name(target) == "strong"): pos["end_column"] - 2 else: pos["end_column"] - 1
+        | if (starts_with(text, " ") || ends_with(text, " ") || ((end_column - 1) - (start_column + 1) > len(text))):
+            {
+              rule: "MD037",
+              name: "no-space-in-emphasis",
+              severity: "warning",
+              message: "Spaces inside emphasis markers",
+              line: pos["start_line"],
+              details: {}
+            }
+          else: None
+      end | compact()
   end
 
 # MD038: Spaces inside code span elements
 | def md038(md, lines, config):
     let rule_config = get_rule_config(config, "md038")
-    |  # Check for spaces inside code spans: ` text ` or `  text`
-    foreach (i, range(0, len(lines) - 1, 1)):
-      let line = lines[i]
-      |  # Pattern: backtick followed by space(s) or space(s) before closing backtick
-      let has_leading_space = regex_match(line, "`\\s+[^`]+`")
-      | let has_trailing_space = regex_match(line, "`[^`]+\\s+`")
-      | if (has_leading_space || has_trailing_space):
-          {
-            rule: "MD038",
-            name: "no-space-in-code",
-            severity: "error",
-            message: "Spaces inside code span elements",
-            line: i + 1,
-            details: {}
-          }
-        else: None
-    end | compact()
+    | let code_inline_blocks = do md | .code_inline | compact() end
+    | foreach (code_inline_block, code_inline_blocks):
+        let text = to_text(code_inline_block)
+        | let pos = _get_markdown_position(code_inline_block)
+        | let start_column = pos["start_column"]
+        | let end_column = pos["end_column"]
+        | if (starts_with(text, " ") || ends_with(text, " ") || ((end_column - 1) - (start_column + 1) > len(text))):
+            {
+              rule: "MD038",
+              name: "no-space-in-code",
+              severity: "error",
+              message: "Spaces inside code span elements",
+              line: pos["start_line"],
+              details: {}
+            }
+          else: None
+      end | compact()
   end
 
 # MD039: Spaces inside link text
@@ -1519,22 +1509,22 @@ else:
     | if (!enabled): []
       else: do
           let code_blocks = do content | .code | compact();
-          | let issues = []
-          | foreach (i, range(0, len(code_blocks) - 1, 1)):
-              let code_block = code_blocks[i]
-              | let language = attr(code_block, "lang")
+          | foreach (code_block, code_blocks):
+              let language = attr(code_block, "lang")
               | if (is_empty(language)):
                   do
-                    {
+                    let pos = _get_markdown_position(code_block)
+                    | {
                       rule: "MD040",
                       name: "fenced-code-language",
                       severity: "warning",
                       message: "Fenced code block should have a language specified",
-                      line: i + 1,
+                      line: pos["start_line"],
                       details: {}
                     }
                   end
-            end | compact() | flatten()
+                else: None
+            end | compact()
         end
   end
 

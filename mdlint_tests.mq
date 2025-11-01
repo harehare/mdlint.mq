@@ -1765,7 +1765,7 @@ end
 
 def test_md036_inline_emphasis():
   let config = default_config()
-  | let raw_content = "This is **bold** text in a paragraph.\n"
+  | let raw_content = "This is **bold** text in a paragraph.\n\ntest"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
   | let result = md036(content, lines, config)
