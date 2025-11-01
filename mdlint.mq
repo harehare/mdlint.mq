@@ -1584,19 +1584,21 @@ else:
 | def md046(md, lines, config):
     let rule_config = get_rule_config(config, "md046")
     | let style = try: rule_config["style"] catch: "consistent"
-    |  # Detect code block styles: fenced (```) or indented (4 spaces)
-    let code_blocks = []
-    | let i = 0
+    # Get code blocks from parsed markdown (efficient, O(c) where c = code blocks)
+    | let parsed_code_blocks = do md | .code | compact() end
     | let code_blocks = do
-          foreach (idx, range(0, len(lines) - 1, 1)):
-                let line = lines[idx]
-                | let trimmed = trim(line)
-                | let is_fenced = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-                | let is_indented = regex_match(line, "^    \\S+") && !is_empty(trimmed)
-                | if (is_fenced):
-                    {line: idx + 1, style: "fenced"}
-                  elif (is_indented):
-                    {line: idx + 1, style: "indented"}
+          foreach (block, parsed_code_blocks):
+                let pos = _get_markdown_position(block)
+                | let start_line = pos["start_line"]
+                | if (start_line > 0 && start_line <= len(lines)):
+                    do
+                      let line = lines[start_line - 1]
+                      | let trimmed = trim(line)
+                      # Check if it's fenced (``` or ~~~) or indented (4 spaces)
+                      | let is_fenced = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+                      | let block_style = if (is_fenced): "fenced" else: "indented"
+                      | {line: start_line, style: block_style}
+                    end
                   else: None
               end | compact()
         end
@@ -1728,18 +1730,34 @@ else:
 | def md049(md, lines, config):
     let rule_config = get_rule_config(config, "md049")
     | let style = try: rule_config["style"] catch: "consistent"
+    # Get code block ranges from parsed markdown
+    | let code_blocks = do md | .code | compact() end
+    | let code_block_ranges = foreach (block, code_blocks):
+          let pos = _get_markdown_position(block)
+          | {start_line: pos["start_line"], end_line: pos["end_line"]}
+        end
+    # Helper to check if line is in any code block
+    | let is_in_code_block = fn(line_num):
+          len(filter(code_block_ranges, fn(range):
+            line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
     |  # Detect emphasis styles: *text* (asterisk) or _text_ (underscore)
     let emphases = do
           foreach (i, range(0, len(lines) - 1, 1)):
                 let line = lines[i]
-                |  # Simple pattern: check for single * or _ (not double)
-                let has_single_asterisk = regex_match(line, "\\*[^*]+\\*") && !regex_match(line, "\\*\\*")
-                | let has_single_underscore = regex_match(line, "_[^_]+_") && !regex_match(line, "__")
-                |  # Return both if both exist
-                let results = []
-                | let results = if (has_single_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
-                | let results = if (has_single_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
-                | results
+                # Skip if inside code block (line numbers are 1-based)
+                | let in_code = is_in_code_block(i + 1)
+                | if (!in_code):
+                    do
+                      # Check for single * or _ (not double)
+                      let has_single_asterisk = regex_match(line, "\\*[^*]+\\*") && !regex_match(line, "\\*\\*")
+                      | let has_single_underscore = regex_match(line, "_[^_]+_") && !regex_match(line, "__")
+                      |  # Return both if both exist
+                      let results = []
+                      | let results = if (has_single_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
+                      | let results = if (has_single_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
+                      | results
+                    end
+                  else: []
               end | flatten() | compact()
         end
     |  # Check consistency
@@ -2073,13 +2091,13 @@ else:
           # Get code blocks and their ranges
           let code_blocks = do md | .code | compact() end
           | let code_block_ranges = foreach (block, code_blocks):
-                let pos = _get_markdown_position(block)
-                | {start_line: pos["start_line"], end_line: pos["end_line"]}
-              end
+                      let pos = _get_markdown_position(block)
+                      | {start_line: pos["start_line"], end_line: pos["end_line"]}
+                    end
           # Helper to check if line is in any code block
           | let is_in_code_block = fn(line_num):
-                len(filter(code_block_ranges, fn(range):
-                  line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
+                      len(filter(code_block_ranges, fn(range):
+                        line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
           # Identify table lines
           | let line_info = do
                       foreach (i, range(0, len(lines) - 1, 1)):
