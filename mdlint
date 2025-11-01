@@ -110,72 +110,62 @@ else
     CONFIG_LOAD="load_config(\"$CONFIG_FILE\") | merge_config()"
 fi
 
-# Lint each file
-TOTAL_ERRORS=0
-TOTAL_WARNINGS=0
-LINTED_FILES=0
+# Validate files and build JSON array of file paths
+VALID_FILES=()
+for file in "${FILES[@]}"; do
+    if [ ! -f "$file" ]; then
+        echo -e "${RED}Error: File '$file' not found${NC}" >&2
+        continue
+    fi
+    VALID_FILES+=("$file")
+done
 
-# JSON output: collect all results
+if [ ${#VALID_FILES[@]} -eq 0 ]; then
+    echo -e "${RED}No valid files to lint${NC}" >&2
+    exit 1
+fi
+
+# Build JSON array: ["path1", "path2", ...]
+FILES_JSON="["
+FIRST=true
+for file in "${VALID_FILES[@]}"; do
+    if [ "$FIRST" = false ]; then
+        FILES_JSON+=","
+    fi
+    # Escape file path for JSON (escape backslashes and quotes)
+    ESCAPED=$(printf '%s' "$file" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    FILES_JSON+="\"$ESCAPED\""
+    FIRST=false
+done
+FILES_JSON+="]"
+
+# Process all files in a single mq execution
 if [ "$JSON_OUTPUT" = true ]; then
-    JSON_RESULTS="["
-    FIRST_FILE=true
+    # JSON output: collect all results in array
+    MQ_SCRIPT="include \"mdlint\" | let config = $CONFIG_LOAD | let files = $FILES_JSON | foreach(file, files): print(\"\n\" + file + \"\n\") | read_file(file) | lint_all_with_config(config) | generate_json_report() | print() | None; | compact()"
 
-    for file in "${FILES[@]}"; do
-        if [ ! -f "$file" ]; then
-            echo -e "${RED}Error: File '$file' not found${NC}" >&2
-            continue
-        fi
-
-        # Escape the file path for use in mq command
-        ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
-
-        # Run linter with JSON output
-        MQ_SCRIPT="include \"mdlint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_json_report()"
-
-        if OUTPUT=$(mq -I raw -F text "$MQ_SCRIPT" 2>&1); then
-            if [ "$FIRST_FILE" = false ]; then
-                JSON_RESULTS+=","
-            fi
-            JSON_RESULTS+="{\"file\":\"$file\",\"result\":$OUTPUT}"
-            FIRST_FILE=false
-            LINTED_FILES=$((LINTED_FILES + 1))
-        else
-            echo -e "${RED}Error linting $file:${NC}" >&2
-            echo "$OUTPUT" >&2
-        fi
-    done
-
-    JSON_RESULTS+="]"
-    echo "$JSON_RESULTS"
+    if OUTPUT=$(mq -I raw -F text "$MQ_SCRIPT" 2>&1); then
+        echo "$OUTPUT"
+    else
+        echo -e "${RED}Error running linter:${NC}" >&2
+        echo "$OUTPUT" >&2
+        exit 1
+    fi
 else
-    # Text output (original behavior)
-    for file in "${FILES[@]}"; do
-        if [ ! -f "$file" ]; then
-            echo -e "${RED}Error: File '$file' not found${NC}"
-            continue
-        fi
-
-        if [ "$QUIET" = false ]; then
-            echo -e "\n${GREEN}Linting:${NC} $file"
-        fi
-
-        # Escape the file path for use in mq command
-        ESCAPED_FILE=$(printf '%s' "$file" | sed 's/["\\]/\\&/g')
-
-        # Run linter
-        MQ_SCRIPT="include \"mdlint\" | let content = read_file(\"$ESCAPED_FILE\") | let config = $CONFIG_LOAD | lint_all_with_config(content, config) | generate_report()"
-
-        if OUTPUT=$(mq -I raw "$MQ_SCRIPT" 2>&1); then
-            echo "$OUTPUT"
-            LINTED_FILES=$((LINTED_FILES + 1))
-        else
-            echo -e "${RED}Error linting $file:${NC}"
-            echo "$OUTPUT"
-        fi
-    done
-
+    # Text output: use foreach to process files sequentially
     if [ "$QUIET" = false ]; then
-        echo -e "\n${GREEN}Linted $LINTED_FILES file(s)${NC}"
+        MQ_SCRIPT="include \"mdlint\" | let config = $CONFIG_LOAD | let files = $FILES_JSON | foreach(file, files): print(\"\n\" + file + \"\n\") | read_file(file) | lint_all_with_config(config) | generate_report() | print() | None; | compact()"
+    else
+        MQ_SCRIPT="include \"mdlint\" | let config = $CONFIG_LOAD | let files = $FILES_JSON | foreach(file, files): print(\"\n\" + file + \"\n\") | read_file(file) | lint_all_with_config(config) | generate_report() | print() | None; | compact()"
+    fi
+
+    if mq -I raw "$MQ_SCRIPT" 2>&1; then
+        if [ "$QUIET" = false ]; then
+            echo -e "\n${GREEN}Linted ${#VALID_FILES[@]} file(s)${NC}"
+        fi
+    else
+        echo -e "${RED}Error running linter${NC}" >&2
+        exit 1
     fi
 fi
 

@@ -2070,12 +2070,23 @@ else:
     | if (!enabled): []
       else:
         do
+          # Get code blocks and their ranges
+          let code_blocks = do md | .code | compact() end
+          | let code_block_ranges = foreach (block, code_blocks):
+                let pos = _get_markdown_position(block)
+                | {start_line: pos["start_line"], end_line: pos["end_line"]}
+              end
+          # Helper to check if line is in any code block
+          | let is_in_code_block = fn(line_num):
+                len(filter(code_block_ranges, fn(range):
+                  line_num >= range["start_line"] && line_num <= range["end_line"];)) > 0;
           # Identify table lines
-          let line_info = do
+          | let line_info = do
                       foreach (i, range(0, len(lines) - 1, 1)):
                                   let line = lines[i]
                                   | let trimmed = trim(line)
-                                  | let is_table = contains(line, "|") && !is_empty(trimmed)
+                                  | let in_code = is_in_code_block(i + 1)
+                                  | let is_table = !in_code && contains(line, "|") && !is_empty(trimmed)
                                   | if (is_table):
                                       do
                                         let is_sep = contains(line, "-") && regex_match(trimmed, "^[|: -]+$")
