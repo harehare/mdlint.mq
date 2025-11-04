@@ -13,6 +13,9 @@ let content = to_markdown(read_file("document.md"))
 | generate_report(result)
 ```
 
+> [!WARNING]
+> Performance issues may occur when processing large files or complex documents, resulting in slower operation. Improvements are underway.
+
 ## Overview
 
 `mdlint.mq` is a linting tool that validates Markdown files against established style rules from [markdownlint](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md). It helps maintain consistent and high-quality Markdown documentation.
