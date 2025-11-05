@@ -3,7 +3,7 @@
 #
 # Reference: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md
 
-include "toml"
+import "toml"
 
 # Default configuration
 | def default_config():
@@ -57,7 +57,7 @@ include "toml"
     try:
       do
         let content = read_file(path)
-        | toml_parse(content)
+        | toml::toml_parse(content)
       end
     catch:
       default_config()
@@ -1420,7 +1420,7 @@ else:
     | let strong_target = do md | .strong | compact() end
     | let emphasis_target = do md | .emphasis | compact() end
     | let punctuation = try: rule_config["punctuation"] catch: ".,;:!?。，；：！？"
-    | foreach (target, strong_target + emphasis_target):
+    | foreach (target, add(strong_target, emphasis_target)):
         let text = to_text(target)
         | let pos = _get_markdown_position(target)
         | let last_char = last(trim(text))

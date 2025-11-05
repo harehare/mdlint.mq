@@ -89,9 +89,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no files specified, find all .md files
+# If no files specified, use fd to find all .md files (non-recursive)
 if [ ${#FILES[@]} -eq 0 ]; then
-    mapfile -t FILES < <(find . -maxdepth 1 -name "*.md" -type f)
+    mapfile -t FILES < <(find . -name "*.md" -type f)
+
     if [ ${#FILES[@]} -eq 0 ]; then
         echo -e "${YELLOW}No Markdown files found in current directory${NC}"
         exit 0
