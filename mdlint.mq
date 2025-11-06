@@ -274,10 +274,10 @@ import "toml"
           # Detect all list marker styles from raw lines
           let list_info = do
                       foreach (i, range(0, len(lines) - 1, 1)):
-                                  let line = lines[i]
-                                  | let marker = _detect_list_marker(line)
-                                  | if (marker != "none"): {line: i + 1, marker: marker} else: None
-                                end | compact()
+                        let line = lines[i]
+                        | let marker = _detect_list_marker(line)
+                        | if (marker != "none"): {line: i + 1, marker: marker} else: None
+                      end | compact()
                     end
 
           # Determine the target style
@@ -317,19 +317,19 @@ import "toml"
     |  # Track indentation for each list level
     let list_items = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                |  # Check for unordered list markers
-                let is_ul = regex_match(trimmed, "^[*+-] ")
-                | let is_ol = regex_match(trimmed, "^\\d+\\. ")
-                | if (is_ul || is_ol):
-                    do
-                      # Calculate indentation (number of leading spaces)
-                      let indent = len(line) - len(trimmed)
-                      | {line: i + 1, indent: indent, type: if (is_ul): "ul" else: "ol"}
-                    end
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            |  # Check for unordered list markers
+            let is_ul = regex_match(trimmed, "^[*+-] ")
+            | let is_ol = regex_match(trimmed, "^\\d+\\. ")
+            | if (is_ul || is_ol):
+                do
+                  # Calculate indentation (number of leading spaces)
+                  let indent = len(line) - len(trimmed)
+                  | {line: i + 1, indent: indent, type: if (is_ul): "ul" else: "ol"}
+                end
+              else: None
+          end | compact()
         end
     |  # Group by indent level and check consistency
     let issues = []
@@ -337,11 +337,11 @@ import "toml"
     let indent_levels = {}
     | let indent_levels = do
           foreach (item, list_items):
-                let indent = to_string(item["indent"])
-                | let current_items = if (is_none(indent_levels[indent])): [] else: indent_levels[indent]
-                | let indent_levels = set(indent_levels, indent, add(current_items, item))
-                | indent_levels
-              end | last()
+            let indent = to_string(item["indent"])
+            | let current_items = if (is_none(indent_levels[indent])): [] else: indent_levels[indent]
+            | let indent_levels = set(indent_levels, indent, add(current_items, item))
+            | indent_levels
+          end | last()
         end
     |  # For each indent level, check if all items have same type
     let indent_levels = if (is_none(indent_levels)): {} else: indent_levels
@@ -785,38 +785,38 @@ else:
               # Check line above (skip if first line)
               | let issues = if (i > 0):
                               do
-                                              let prev_line = lines[i - 1]
-                                              | let prev_trimmed = trim(prev_line)
-                                              | if (!is_empty(prev_trimmed)):
-                                                  add(issues, {
-                                                    rule: "MD022",
-                                                    name: "blanks-around-headings",
-                                                    severity: "error",
-                                                    message: "Headings should be surrounded by blank lines",
-                                                    line: i + 1,
-                                                    details: {position: "above"}
-                                                  })
-                                                else: issues
-                                            end
+                                let prev_line = lines[i - 1]
+                                | let prev_trimmed = trim(prev_line)
+                                | if (!is_empty(prev_trimmed)):
+                                    add(issues, {
+                                      rule: "MD022",
+                                      name: "blanks-around-headings",
+                                      severity: "error",
+                                      message: "Headings should be surrounded by blank lines",
+                                      line: i + 1,
+                                      details: {position: "above"}
+                                    })
+                                  else: issues
+                              end
                             else: issues
               # Check line below (skip if last line)
               | let issues = if (i < len(lines) - 1):
                               do
-                                              let next_line = lines[i + 1]
-                                              | let next_trimmed = trim(next_line)
-                                              # Skip if next line is setext underline
-                                              | let is_setext_underline = regex_match(next_trimmed, "^[=\\-]+$")
-                                              | if (!is_empty(next_trimmed) && !is_setext_underline):
-                                                  add(issues, {
-                                                    rule: "MD022",
-                                                    name: "blanks-around-headings",
-                                                    severity: "error",
-                                                    message: "Headings should be surrounded by blank lines",
-                                                    line: i + 1,
-                                                    details: {position: "below"}
-                                                  })
-                                                else: issues
-                                            end
+                                let next_line = lines[i + 1]
+                                | let next_trimmed = trim(next_line)
+                                # Skip if next line is setext underline
+                                | let is_setext_underline = regex_match(next_trimmed, "^[=\\-]+$")
+                                | if (!is_empty(next_trimmed) && !is_setext_underline):
+                                    add(issues, {
+                                      rule: "MD022",
+                                      name: "blanks-around-headings",
+                                      severity: "error",
+                                      message: "Headings should be surrounded by blank lines",
+                                      line: i + 1,
+                                      details: {position: "below"}
+                                    })
+                                  else: issues
+                              end
                             else: issues
               | issues
             end
@@ -827,36 +827,36 @@ else:
               # Check line above the heading text (skip if first line)
               | let issues = if (i > 0):
                               do
-                                              let prev_line = lines[i - 1]
-                                              | let prev_trimmed = trim(prev_line)
-                                              | if (!is_empty(prev_trimmed)):
-                                                  add(issues, {
-                                                    rule: "MD022",
-                                                    name: "blanks-around-headings",
-                                                    severity: "error",
-                                                    message: "Headings should be surrounded by blank lines",
-                                                    line: i + 1,
-                                                    details: {position: "above"}
-                                                  })
-                                                else: issues
-                                            end
+                                let prev_line = lines[i - 1]
+                                | let prev_trimmed = trim(prev_line)
+                                | if (!is_empty(prev_trimmed)):
+                                    add(issues, {
+                                      rule: "MD022",
+                                      name: "blanks-around-headings",
+                                      severity: "error",
+                                      message: "Headings should be surrounded by blank lines",
+                                      line: i + 1,
+                                      details: {position: "above"}
+                                    })
+                                  else: issues
+                              end
                             else: issues
               # Check line below the underline (skip if last line)
               | let issues = if (i + 1 < len(lines) - 1):
                               do
-                                              let line_after_underline = lines[i + 2]
-                                              | let after_trimmed = trim(line_after_underline)
-                                              | if (!is_empty(after_trimmed)):
-                                                  add(issues, {
-                                                    rule: "MD022",
-                                                    name: "blanks-around-headings",
-                                                    severity: "error",
-                                                    message: "Headings should be surrounded by blank lines",
-                                                    line: i + 2,
-                                                    details: {position: "below"}
-                                                  })
-                                                else: issues
-                                            end
+                                let line_after_underline = lines[i + 2]
+                                | let after_trimmed = trim(line_after_underline)
+                                | if (!is_empty(after_trimmed)):
+                                    add(issues, {
+                                      rule: "MD022",
+                                      name: "blanks-around-headings",
+                                      severity: "error",
+                                      message: "Headings should be surrounded by blank lines",
+                                      line: i + 2,
+                                      details: {position: "below"}
+                                    })
+                                  else: issues
+                              end
                             else: issues
               | issues
             end
@@ -1038,43 +1038,43 @@ else:
     | let in_code_block = false
     | let list_items = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                # Check if entering/exiting code block
-                | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-                | let in_code_block = if (is_fence): !in_code_block else: in_code_block
-                # Check for ordered list item (pattern: number followed by dot and space)
-                | if (!in_code_block && regex_match(trimmed, "^\\d+\\. ")):
-                    do
-                      # Extract the number
-                      let matches = regex_match(trimmed, "^(\\d+)\\. ")
-                      | if (matches):
-                          do
-                            # Extract first digit(s) before the dot
-                            let num_str = slice(trimmed, 0, index(trimmed, "."))
-                            | let num = try: to_number(num_str) catch: 0
-                            | {line: i + 1, number: num}
-                          end
-                        else: None
-                    end
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            # Check if entering/exiting code block
+            | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+            | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+            # Check for ordered list item (pattern: number followed by dot and space)
+            | if (!in_code_block && regex_match(trimmed, "^\\d+\\. ")):
+                do
+                  # Extract the number
+                  let matches = regex_match(trimmed, "^(\\d+)\\. ")
+                  | if (matches):
+                      do
+                        # Extract first digit(s) before the dot
+                        let num_str = slice(trimmed, 0, index(trimmed, "."))
+                        | let num = try: to_number(num_str) catch: 0
+                        | {line: i + 1, number: num}
+                      end
+                    else: None
+                end
+              else: None
+          end | compact()
         end
     # Detect style if "one_or_ordered"
     | let detected_style = if (style == "one_or_ordered"):
           do
-                if (len(list_items) == 0): "one"
-                elif (len(list_items) == 1): "one"
-                else:
-                  do
-                    # Check if all are 1
-                    let all_one = foreach (item, list_items):
-                                          if (item["number"] == 1): true else: false
-                                        end
-                    | let all_one = if (len(filter(all_one, fn(x): x;)) == len(list_items)): true else: false
-                    | if (all_one): "one" else: "ordered"
-                  end
+            if (len(list_items) == 0): "one"
+            elif (len(list_items) == 1): "one"
+            else:
+              do
+                # Check if all are 1
+                let all_one = foreach (item, list_items):
+                                  if (item["number"] == 1): true else: false
+                                end
+                | let all_one = if (len(filter(all_one, fn(x): x;)) == len(list_items)): true else: false
+                | if (all_one): "one" else: "ordered"
               end
+          end
         else: style
     # Check each list item
     | foreach (idx, range(0, len(list_items) - 1, 1)):
@@ -1365,20 +1365,20 @@ else:
     | let hr_lines = []
     | let hr_lines = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                # Check for horizontal rule patterns: ---, ***, ___
-                | let is_dash_hr = regex_match(trimmed, "^-{3,}$")
-                | let is_asterisk_hr = regex_match(trimmed, "^\\*{3,}$")
-                | let is_underscore_hr = regex_match(trimmed, "^_{3,}$")
-                | if (is_dash_hr):
-                    {line: i + 1, style: trimmed, type: "dash"}
-                  elif (is_asterisk_hr):
-                    {line: i + 1, style: trimmed, type: "asterisk"}
-                  elif (is_underscore_hr):
-                    {line: i + 1, style: trimmed, type: "underscore"}
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            # Check for horizontal rule patterns: ---, ***, ___
+            | let is_dash_hr = regex_match(trimmed, "^-{3,}$")
+            | let is_asterisk_hr = regex_match(trimmed, "^\\*{3,}$")
+            | let is_underscore_hr = regex_match(trimmed, "^_{3,}$")
+            | if (is_dash_hr):
+                {line: i + 1, style: trimmed, type: "dash"}
+              elif (is_asterisk_hr):
+                {line: i + 1, style: trimmed, type: "asterisk"}
+              elif (is_underscore_hr):
+                {line: i + 1, style: trimmed, type: "underscore"}
+              else: None
+          end | compact()
         end
     # Determine the target style type
     | let is_consistent = expected_style == "consistent"
@@ -1439,22 +1439,41 @@ else:
   end
 
 # MD037: Spaces inside emphasis markers
+# Efficiently processes each line to detect spaces inside emphasis markers
 | def md037(md, lines, config):
-    let targets = do md | select(.strong || .emphasis) | compact() end
-    | foreach (target, targets):
-        let text = do target | .strong || .emphasis | to_text();
-        | let pos = _get_markdown_position(target)
-        | let start_column = if (to_md_name(target) == "strong"): pos["start_column"] + 2 else: pos["start_column"] + 1
-        | let end_column = if (to_md_name(target) == "strong"): pos["end_column"] - 2 else: pos["end_column"] - 1
-        | if (starts_with(text, " ") || ends_with(text, " ") || ((end_column - 1) - (start_column + 1) > len(text))):
-            {
-              rule: "MD037",
-              name: "no-space-in-emphasis",
-              severity: "warning",
-              message: "Spaces inside emphasis markers",
-              line: pos["start_line"],
-              details: {}
-            }
+    let in_code_block = false
+    | foreach (i, range(0, len(lines) - 1, 1)):
+        let line = lines[i]
+        | let trimmed = trim(line)
+        # Check if entering/exiting code block
+        | let is_fence = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+        | let in_code_block = if (is_fence): !in_code_block else: in_code_block
+        # Skip code blocks
+        | if (!in_code_block):
+            do
+              # Remove inline code spans to avoid false positives
+              let line_without_code = gsub(line, "`[^`]+`", "")
+              # Check for complete emphasis patterns with spaces inside markers
+              # Pattern: **<space>text** or **text<space>** (spaces INSIDE the markers)
+              | let has_strong_asterisk_violation = regex_match(line_without_code, "\\*\\* .+\\*\\*") || regex_match(line_without_code, "\\*\\*.+ \\*\\*")
+              | let has_strong_underscore_violation = regex_match(line_without_code, "__ .+__") || regex_match(line_without_code, "__.+ __")
+              # Check for single emphasis markers (avoiding ** or __)
+              # Pattern: *<space>text* or *text<space>*
+              | let has_emphasis_asterisk_violation = regex_match(line_without_code, "[^\\*]\\* .+\\*[^\\*]") || regex_match(line_without_code, "[^\\*]\\*.+ \\*[^\\*]")
+              | let has_emphasis_underscore_violation = regex_match(line_without_code, "[^_]_ .+_[^_]") || regex_match(line_without_code, "[^_]_.+ _[^_]")
+              # Report error if any pattern matches
+              | let has_violation = has_strong_asterisk_violation || has_strong_underscore_violation || has_emphasis_asterisk_violation || has_emphasis_underscore_violation
+              | if (has_violation):
+                  {
+                    rule: "MD037",
+                    name: "no-space-in-emphasis",
+                    severity: "warning",
+                    message: "Spaces inside emphasis markers",
+                    line: i + 1,
+                    details: {}
+                  }
+                else: None
+            end
           else: None
       end | compact()
   end
@@ -1539,10 +1558,10 @@ else:
         # Find first non-empty line
         let first_non_empty = do
                   foreach (i, range(0, len(lines) - 1, 1)):
-                            let line = lines[i]
-                            | let trimmed = trim(line)
-                            | if (!is_empty(trimmed)): trimmed else: None
-                          end | compact() | first()
+                    let line = lines[i]
+                    | let trimmed = trim(line)
+                    | if (!is_empty(trimmed)): trimmed else: None
+                  end | compact() | first()
                 end
         | if (is_none(first_non_empty)): []
           else:
@@ -1578,19 +1597,19 @@ else:
     | let parsed_code_blocks = do md | .code | compact() end
     | let code_blocks = do
           foreach (block, parsed_code_blocks):
-                let pos = _get_markdown_position(block)
-                | let start_line = pos["start_line"]
-                | if (start_line > 0 && start_line <= len(lines)):
-                    do
-                      let line = lines[start_line - 1]
-                      | let trimmed = trim(line)
-                      # Check if it's fenced (``` or ~~~) or indented (4 spaces)
-                      | let is_fenced = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
-                      | let block_style = if (is_fenced): "fenced" else: "indented"
-                      | {line: start_line, style: block_style}
-                    end
-                  else: None
-              end | compact()
+            let pos = _get_markdown_position(block)
+            | let start_line = pos["start_line"]
+            | if (start_line > 0 && start_line <= len(lines)):
+                do
+                  let line = lines[start_line - 1]
+                  | let trimmed = trim(line)
+                  # Check if it's fenced (``` or ~~~) or indented (4 spaces)
+                  | let is_fenced = starts_with(trimmed, "```") || starts_with(trimmed, "~~~")
+                  | let block_style = if (is_fenced): "fenced" else: "indented"
+                  | {line: start_line, style: block_style}
+                end
+              else: None
+          end | compact()
         end
     |  # Check consistency if style is "consistent"
     if (style == "consistent"):
@@ -1664,14 +1683,14 @@ else:
     |  # Detect code fence styles: backtick (```) or tilde (~~~)
     let fences = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                | if (starts_with(trimmed, "```")):
-                    {line: i + 1, style: "backtick"}
-                  elif (starts_with(trimmed, "~~~")):
-                    {line: i + 1, style: "tilde"}
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            | if (starts_with(trimmed, "```")):
+                {line: i + 1, style: "backtick"}
+              elif (starts_with(trimmed, "~~~")):
+                {line: i + 1, style: "tilde"}
+              else: None
+          end | compact()
         end
     |  # Check consistency
     if (style == "consistent"):
@@ -1733,22 +1752,22 @@ else:
     |  # Detect emphasis styles: *text* (asterisk) or _text_ (underscore)
     let emphases = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                # Skip if inside code block (line numbers are 1-based)
-                | let in_code = is_in_code_block(i + 1)
-                | if (!in_code):
-                    do
-                      # Check for single * or _ (not double)
-                      let has_single_asterisk = regex_match(line, "\\*[^*]+\\*") && !regex_match(line, "\\*\\*")
-                      | let has_single_underscore = regex_match(line, "_[^_]+_") && !regex_match(line, "__")
-                      |  # Return both if both exist
-                      let results = []
-                      | let results = if (has_single_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
-                      | let results = if (has_single_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
-                      | results
-                    end
-                  else: []
-              end | flatten() | compact()
+            let line = lines[i]
+            # Skip if inside code block (line numbers are 1-based)
+            | let in_code = is_in_code_block(i + 1)
+            | if (!in_code):
+                do
+                  # Check for single * or _ (not double)
+                  let has_single_asterisk = regex_match(line, "\\*[^*]+\\*") && !regex_match(line, "\\*\\*")
+                  | let has_single_underscore = regex_match(line, "_[^_]+_") && !regex_match(line, "__")
+                  |  # Return both if both exist
+                  let results = []
+                  | let results = if (has_single_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
+                  | let results = if (has_single_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
+                  | results
+                end
+              else: []
+          end | flatten() | compact()
         end
     |  # Check consistency
     if (style == "consistent"):
@@ -1810,21 +1829,21 @@ else:
     |  # Detect strong styles: **text** (asterisk) or __text__ (underscore)
     let strongs = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                # Skip if inside code block (line numbers are 1-based)
-                | let in_code = is_in_code_block(i + 1)
-                | if (!in_code):
-                    do
-                      let has_asterisk = regex_match(line, "\\*\\*[^*]+\\*\\*")
-                      | let has_underscore = regex_match(line, "__[^_]+__")
-                      |  # Return both if both exist
-                      let results = []
-                      | let results = if (has_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
-                      | let results = if (has_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
-                      | results
-                    end
-                  else: []
-              end | flatten() | compact()
+            let line = lines[i]
+            # Skip if inside code block (line numbers are 1-based)
+            | let in_code = is_in_code_block(i + 1)
+            | if (!in_code):
+                do
+                  let has_asterisk = regex_match(line, "\\*\\*[^*]+\\*\\*")
+                  | let has_underscore = regex_match(line, "__[^_]+__")
+                  |  # Return both if both exist
+                  let results = []
+                  | let results = if (has_asterisk): add(results, {line: i + 1, style: "asterisk"}) else: results
+                  | let results = if (has_underscore): add(results, {line: i + 1, style: "underscore"}) else: results
+                  | results
+                end
+              else: []
+          end | flatten() | compact()
         end
     |  # Check consistency
     if (style == "consistent"):
@@ -1876,13 +1895,13 @@ else:
     let headings = do md | .h | compact();
     | let valid_fragments = do
           foreach (h, headings):
-                let heading_text = to_text(h)
-                |  # Convert heading to fragment ID (simplified)
-                let fragment = downcase(heading_text)
-                | let fragment = gsub(fragment, "\\s+", "-")
-                | let fragment = gsub(fragment, "[^a-z0-9-]", "")
-                | fragment
-              end | compact()
+            let heading_text = to_text(h)
+            |  # Convert heading to fragment ID (simplified)
+            let fragment = downcase(heading_text)
+            | let fragment = gsub(fragment, "\\s+", "-")
+            | let fragment = gsub(fragment, "[^a-z0-9-]", "")
+            | fragment
+          end | compact()
         end
     |  # Check all link fragments
     foreach (i, range(0, len(lines) - 1, 1)):
@@ -1906,18 +1925,18 @@ else:
     |  # Extract all reference definitions: [label]: url
     let definitions = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                | if (regex_match(trimmed, "^\\[[^\\]]+\\]:\\s+")):
-                    do
-                      # Extract label from [label]: url
-                      let label_match = regex_match(trimmed, "^\\[([^\\]]+)\\]:")
-                      | if (label_match):
-                          downcase(trimmed)                        # Store the whole line for now
-                        else: None
-                    end
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            | if (regex_match(trimmed, "^\\[[^\\]]+\\]:\\s+")):
+                do
+                  # Extract label from [label]: url
+                  let label_match = regex_match(trimmed, "^\\[([^\\]]+)\\]:")
+                  | if (label_match):
+                      downcase(trimmed)                    # Store the whole line for now
+                    else: None
+                end
+              else: None
+          end | compact()
         end
     |  # Check all reference-style links: [text][label]
     foreach (i, range(0, len(lines) - 1, 1)):
@@ -1938,20 +1957,20 @@ else:
     |  # Extract all reference definitions
     let definitions = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                | if (regex_match(trimmed, "^\\[[^\\]]+\\]:\\s+")):
-                    {line: i + 1, text: trimmed}
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            | if (regex_match(trimmed, "^\\[[^\\]]+\\]:\\s+")):
+                {line: i + 1, text: trimmed}
+              else: None
+          end | compact()
         end
     |  # Extract all reference uses
     let uses = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let has_ref = regex_match(line, "\\[[^\\]]+\\]\\[[^\\]]+\\]")
-                | if (has_ref): {line: i + 1} else: None
-              end | compact()
+            let line = lines[i]
+            | let has_ref = regex_match(line, "\\[[^\\]]+\\]\\[[^\\]]+\\]")
+            | if (has_ref): {line: i + 1} else: None
+          end | compact()
         end
     |  # In a full implementation, check if definitions are used
     # For now, simplified
@@ -1965,15 +1984,15 @@ else:
     |  # Detect link styles: inline [text](url) vs reference [text][label]
     let links = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let has_inline = regex_match(line, "\\[[^\\]]+\\]\\([^)]+\\)")
-                | let has_reference = regex_match(line, "\\[[^\\]]+\\]\\[[^\\]]+\\]")
-                |  # Return both if both exist
-                let results = []
-                | let results = if (has_inline): add(results, {line: i + 1, style: "inline"}) else: results
-                | let results = if (has_reference): add(results, {line: i + 1, style: "reference"}) else: results
-                | results
-              end | flatten() | compact()
+            let line = lines[i]
+            | let has_inline = regex_match(line, "\\[[^\\]]+\\]\\([^)]+\\)")
+            | let has_reference = regex_match(line, "\\[[^\\]]+\\]\\[[^\\]]+\\]")
+            |  # Return both if both exist
+            let results = []
+            | let results = if (has_inline): add(results, {line: i + 1, style: "inline"}) else: results
+            | let results = if (has_reference): add(results, {line: i + 1, style: "reference"}) else: results
+            | results
+          end | flatten() | compact()
         end
     |  # Check consistency
     if (style == "consistent"):
@@ -2025,22 +2044,22 @@ else:
     |  # Detect table lines and their pipe styles
     let table_lines = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                # Check if line is in table context (not in code blocks or other contexts)
-                | if (is_in_table_context(lines, i) && !is_empty(trimmed)):
-                    do
-                      # Check for leading and trailing pipes
-                      let has_leading = starts_with(trimmed, "|")
-                      | let has_trailing = ends_with(trimmed, "|")
-                      | let pipe_style = if (has_leading && has_trailing): "leading_and_trailing"
-                                            elif (has_leading): "leading_only"
-                                            elif (has_trailing): "trailing_only"
-                                            else: "no_outer_pipes"
-                      | {line: i + 1, style: pipe_style, text: trimmed}
-                    end
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            # Check if line is in table context (not in code blocks or other contexts)
+            | if (is_in_table_context(lines, i) && !is_empty(trimmed)):
+                do
+                  # Check for leading and trailing pipes
+                  let has_leading = starts_with(trimmed, "|")
+                  | let has_trailing = ends_with(trimmed, "|")
+                  | let pipe_style = if (has_leading && has_trailing): "leading_and_trailing"
+                                    elif (has_leading): "leading_only"
+                                    elif (has_trailing): "trailing_only"
+                                    else: "no_outer_pipes"
+                  | {line: i + 1, style: pipe_style, text: trimmed}
+                end
+              else: None
+          end | compact()
         end
     |  # Determine target style
     let target_style = if (style == "consistent"):
@@ -2091,20 +2110,20 @@ else:
           # Identify table lines
           | let line_info = do
                       foreach (i, range(0, len(lines) - 1, 1)):
-                                  let line = lines[i]
-                                  | let trimmed = trim(line)
-                                  | let in_code = is_in_code_block(i + 1)
-                                  | let is_table = !in_code && contains(line, "|") && !is_empty(trimmed)
-                                  | if (is_table):
-                                      do
-                                        let is_sep = contains(line, "-") && regex_match(trimmed, "^[|: -]+$")
-                                        | let parts = split(line, "\\|")
-                                        | let cols = len(filter(parts, fn(p): !is_empty(trim(p));))
-                                        | {line_num: i + 1, is_table: true, is_sep: is_sep, cols: cols}
-                                      end
-                                    else:
-                                      {line_num: i + 1, is_table: false, is_sep: false, cols: 0}
-                                end | compact()
+                        let line = lines[i]
+                        | let trimmed = trim(line)
+                        | let in_code = is_in_code_block(i + 1)
+                        | let is_table = !in_code && contains(line, "|") && !is_empty(trimmed)
+                        | if (is_table):
+                            do
+                              let is_sep = contains(line, "-") && regex_match(trimmed, "^[|: -]+$")
+                              | let parts = split(line, "\\|")
+                              | let cols = len(filter(parts, fn(p): !is_empty(trim(p));))
+                              | {line_num: i + 1, is_table: true, is_sep: is_sep, cols: cols}
+                            end
+                          else:
+                            {line_num: i + 1, is_table: false, is_sep: false, cols: 0}
+                      end | compact()
                     end
 
           # Find tables (consecutive table lines) and check column counts
@@ -2121,18 +2140,18 @@ else:
                         # Look for previous data row in same table
                         let prev_data = if (i > 0):
                           do
-                                                    let prev = table_lines[i - 1]
-                                                    | let gap = current["line_num"] - prev["line_num"]
-                                                    # If gap is 1 or 2 (for separator), consider same table
-                                                    | if (gap <= 2 && !prev["is_sep"]): prev
-                                                      elif (gap <= 2 && i > 1):
-                                                        do
-                                                          let prev2 = table_lines[i - 2]
-                                                          | let gap2 = current["line_num"] - prev2["line_num"]
-                                                          | if (gap2 <= 3 && !prev2["is_sep"]): prev2 else: None
-                                                        end
-                                                      else: None
-                                                  end
+                            let prev = table_lines[i - 1]
+                            | let gap = current["line_num"] - prev["line_num"]
+                            # If gap is 1 or 2 (for separator), consider same table
+                            | if (gap <= 2 && !prev["is_sep"]): prev
+                              elif (gap <= 2 && i > 1):
+                                do
+                                  let prev2 = table_lines[i - 2]
+                                  | let gap2 = current["line_num"] - prev2["line_num"]
+                                  | if (gap2 <= 3 && !prev2["is_sep"]): prev2 else: None
+                                end
+                              else: None
+                          end
                         else: None
                         | if (!is_none(prev_data) && current["cols"] != prev_data["cols"]):
                             do
@@ -2316,30 +2335,30 @@ else:
     |  # Detect table separator lines and their alignment style
     let table_separators = do
           foreach (i, range(0, len(lines) - 1, 1)):
-                let line = lines[i]
-                | let trimmed = trim(line)
-                # Check for table separator line (contains |, -, and :)
-                | if (contains(line, "|") && contains(line, "-") && !is_empty(trimmed)):
-                    do
-                      # Check if it's a separator line (mostly dashes and pipes)
-                      let is_separator = regex_match(trimmed, "^[|:\\s-]+$")
-                      | if (is_separator):
-                          do
-                            # Detect alignment style from colons
-                            let has_left = contains(line, ":-") || contains(line, ":--")
-                            | let has_right = contains(line, "-:") || contains(line, "--:")
-                            | let has_center = contains(line, ":-:") || contains(line, ":--:")
-                            | let alignment = if (has_center): "center"
-                                                        elif (has_left && has_right): "mixed"
-                                                        elif (has_left): "left"
-                                                        elif (has_right): "right"
-                                                        else: "none"
-                            | {line: i + 1, style: alignment, text: trimmed}
-                          end
-                        else: None
-                    end
-                  else: None
-              end | compact()
+            let line = lines[i]
+            | let trimmed = trim(line)
+            # Check for table separator line (contains |, -, and :)
+            | if (contains(line, "|") && contains(line, "-") && !is_empty(trimmed)):
+                do
+                  # Check if it's a separator line (mostly dashes and pipes)
+                  let is_separator = regex_match(trimmed, "^[|:\\s-]+$")
+                  | if (is_separator):
+                      do
+                        # Detect alignment style from colons
+                        let has_left = contains(line, ":-") || contains(line, ":--")
+                        | let has_right = contains(line, "-:") || contains(line, "--:")
+                        | let has_center = contains(line, ":-:") || contains(line, ":--:")
+                        | let alignment = if (has_center): "center"
+                                                elif (has_left && has_right): "mixed"
+                                                elif (has_left): "left"
+                                                elif (has_right): "right"
+                                                else: "none"
+                        | {line: i + 1, style: alignment, text: trimmed}
+                      end
+                    else: None
+                end
+              else: None
+          end | compact()
         end
     |  # Determine target style
     let target_style = if (style == "consistent"):
