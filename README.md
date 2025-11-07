@@ -1,8 +1,83 @@
 <h1 align="center">mdlint.mq</h1>
 
-<p align="center">A Markdown linter implementing 50 markdownlint rules in the <code>mq</code> language.</p>
+<p align="center">
+  <a href="https://github.com/harehare/mq"><img src="https://img.shields.io/badge/mq-language-orange.svg" alt="mq language"></a>
+  <a href="https://github.com/markdownlint/markdownlint"><img src="https://img.shields.io/badge/markdownlint-50%20rules-brightgreen.svg" alt="50 markdownlint rules"></a>
+</p>
+
+<p align="center">A Markdown linter implementing 50 markdownlint rules in the <code>mq</code>.</p>
+
+## Installation
+
+### Prerequisites
+
+- **curl**: Required for downloading files
+- **bash**: Required to run the installation script
+- **mq**: The mq language runtime (automatically installed if not present)
+
+### Quick Installation
+
+Install mdlint.mq using the automated installation script:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/harehare/mdlint.mq/main/install.sh | bash
+```
+
+This script will:
+1. Check if `mq` is installed (and install it if needed)
+2. Download the latest version of `mdlint.mq` and configuration files
+3. Install files to `~/.mq/modules/`
+4. Set up the default configuration
+
+### Manual Installation
+
+If you prefer to install manually:
+
+```bash
+# 1. Install mq (if not already installed)
+curl -sSL https://mqlang.org/install.sh | bash
+
+# 2. Clone the repository
+git clone https://github.com/harehare/mdlint.mq.git
+cd mdlint.mq
+
+# 3. Copy files to mq module directory
+mkdir -p ~/.mq
+cp mdlint.mq ~/.mq
+cp .lintrc.toml ~/.mq
+
+# 4. (Optional) Make mdlint script executable and add to PATH
+chmod +x mdlint
+# Add to PATH or create a symlink, e.g.:
+# ln -s $(pwd)/mdlint /usr/local/bin/mdlint
+```
+
+### Verify Installation
+
+After installation, verify that mdlint.mq is working:
+
+```bash
+mq 'import "mdlint" | "# Test\n\n## Section\n" | mdlint::lint_all() | mdlint::generate_report()'
+```
+
+You should see: `✅ No issues found! Your Markdown is looking great.`
 
 ## Quick Start
+
+Using the mdlint command (after installation):
+
+```bash
+# Lint a single file
+mdlint README.md
+
+# Lint all Markdown files in current directory
+mdlint
+
+# Lint with custom configuration
+mdlint -c .lintrc.toml *.md
+```
+
+Or use as a library in your mq scripts:
 
 ```mq
 include "lint"
@@ -276,11 +351,70 @@ let content = to_markdown(read_file("document.md"))
 
 ## Usage
 
+### Using the mdlint Command
+
+The easiest way to use mdlint.mq is through the `mdlint` shell script:
+
+#### Basic Usage
+
+Lint a single file:
+
+```bash
+./mdlint README.md
+```
+
+Lint multiple files:
+
+```bash
+./mdlint README.md CONTRIBUTING.md docs/guide.md
+```
+
+Lint all Markdown files in the current directory:
+
+```bash
+./mdlint
+```
+
+#### Options
+
+```bash
+# Use a custom configuration file
+./mdlint -c custom-config.toml README.md
+
+# Output results in JSON format
+./mdlint -j README.md
+
+# Quiet mode (suppress info messages)
+./mdlint -q README.md
+
+# Show help
+./mdlint --help
+
+# Show version
+./mdlint --version
+```
+
+#### Examples
+
+```bash
+# Lint all markdown files with custom config
+./mdlint -c .lintrc.toml
+
+# Lint specific files and output JSON
+./mdlint -j *.md
+
+# Lint all files in quiet mode
+./mdlint -q
+```
+
+### Using as a Library
+
 The linter provides several functions that can be used in your mq scripts:
 
 ### Core Functions
 
 #### `lint_all(content)`
+
 Runs all linting rules with default configuration on the provided Markdown content and returns a result with issues and summary.
 
 ```mq
@@ -290,6 +424,7 @@ let content = to_markdown("# Title\n\n### Skipped Level\n")
 ```
 
 #### `lint_all_with_config(content, config)`
+
 Runs all linting rules with a custom configuration on the provided Markdown content.
 
 ```mq
@@ -300,7 +435,9 @@ let config = load_config(".lintrc.toml") | merge_config()
 ```
 
 #### `generate_report(lint_result)`
+
 Generates a formatted report from the lint results, including:
+
 - Issue count by severity (errors, warnings, info)
 - Detailed list of all issues with line numbers
 - Success message if no issues found
@@ -327,6 +464,7 @@ md###(markdown_content, lines, config) -> array of issues
 - MD058, MD059, MD060
 
 **Example:**
+
 ```mq
 let content = to_markdown("# Title\n\n### Skipped Level\n")
 | let lines = split("# Title\n\n### Skipped Level\n", "\n")
@@ -342,7 +480,8 @@ let content = to_markdown("# Title\n\n### Skipped Level\n")
 ### Example Output
 
 When issues are found:
-```
+
+```md
 # Markdown Lint Report
 
 Found 3 issues:
@@ -357,13 +496,14 @@ Found 3 issues:
 ```
 
 When no issues are found:
-```
+
+```bash
 ✅ No issues found! Your Markdown is looking great.
 ```
 
 ## File Structure
 
-```
+```bash
 mdlint.mq/
 ├── .lintrc.toml      # Configuration file
 ├── mdlint.mq           # Main linter implementation

@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# mqlint - Markdown linter using mdlint.mq
-#
-# Usage:
-#   mqlint [file.md]              Lint a specific file
-#   mqlint                        Lint all .md files in current directory
-#   mqlint -h, --help             Show help message
-
 set -euo pipefail
 
 VERSION="0.1.0"
@@ -91,7 +84,11 @@ done
 
 # If no files specified, use fd to find all .md files (non-recursive)
 if [ ${#FILES[@]} -eq 0 ]; then
-    mapfile -t FILES < <(find . -name "*.md" -type f)
+    if ! command -v fd >/dev/null 2>&1; then
+        echo -e "${RED}Error: 'fd' command not found. Please install 'fd' to use this script.${NC}" >&2
+        exit 1
+    fi
+    mapfile -t FILES < <(fd --type f --extension md --strip-cwd-prefix)
 
     if [ ${#FILES[@]} -eq 0 ]; then
         echo -e "${YELLOW}No Markdown files found in current directory${NC}"
@@ -106,9 +103,9 @@ if [ ! -f "$CONFIG_FILE" ]; then
         exit 1
     fi
     # Use default config if .lintrc.toml doesn't exist
-    CONFIG_LOAD="default_config()"
+    CONFIG_LOAD="mdlint::default_config()"
 else
-    CONFIG_LOAD="load_config(\"$CONFIG_FILE\") | merge_config()"
+    CONFIG_LOAD="mdlint::load_config(\"$CONFIG_FILE\") | merge_config()"
 fi
 
 # Validate files and build JSON array of file paths
@@ -135,7 +132,7 @@ for file in "${VALID_FILES[@]}"; do
 
     if [ "$JSON_OUTPUT" = true ]; then
         # JSON output
-        MQ_SCRIPT="include \"mdlint\" | let config = $CONFIG_LOAD | print(\"\n\" + \"$ESCAPED_FILE\" + \"\n\") | read_file(\"$ESCAPED_FILE\") | lint_all_with_config(config) | generate_json_report() | print()"
+        MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | read_file(\"$ESCAPED_FILE\") | mdlint::lint_all_with_config(config) | mdlint::generate_json_report() | print()"
 
         if OUTPUT=$(mq -I raw -F text "$MQ_SCRIPT" 2>&1); then
             echo "$OUTPUT"
@@ -146,7 +143,7 @@ for file in "${VALID_FILES[@]}"; do
         fi
     else
         # Text output
-        MQ_SCRIPT="include \"mdlint\" | let config = $CONFIG_LOAD | print(\"\n\" + \"$ESCAPED_FILE\" + \"\n\") | read_file(\"$ESCAPED_FILE\") | lint_all_with_config(config) | generate_report() | print()"
+        MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | print(\"\n\" + \"$ESCAPED_FILE\" + \"\n\") | read_file(\"$ESCAPED_FILE\") | mdlint::lint_all_with_config(config) | mdlint::generate_report() | print()"
 
         if ! mq -I raw "$MQ_SCRIPT" 2>&1; then
             echo -e "${RED}Error running linter on $file${NC}" >&2

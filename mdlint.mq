@@ -1308,7 +1308,7 @@ else:
           let issues = []
           | foreach (i, range(0, len(html_nodes) - 1, 1)):
               let html_node = html_nodes[i]
-              | let html_text = replace(to_text(html_node), "\"", "\\\"")
+              | let html_text = do replace(to_text(html_node), "\"", "\\\"") | replace("\n", "\\n");
               | {
                 rule: "MD033",
                 name: "no-inline-html",
@@ -2217,16 +2217,33 @@ else:
           | if (is_separator): true
             else:
               do
-                # Check if there's a separator line nearby (within 3 lines above or below)
-                let has_separator_above =
-                  if (idx > 0 && is_table_separator_line(lines[idx - 1])): true
-                  elif (idx > 1 && is_valid_table_row(lines[idx - 1]) && is_table_separator_line(lines[idx - 2])): true
-                  else: false
-                | let has_separator_below =
-                  if (idx < len(lines) - 1 && is_table_separator_line(lines[idx + 1])): true
-                  elif (idx < len(lines) - 2 && is_valid_table_row(lines[idx + 1]) && is_table_separator_line(lines[idx + 2])): true
-                  else: false
-                | has_separator_above || has_separator_below
+                # Find separator line by searching up and down through consecutive table rows
+                # Search upward for separator
+                let find_separator_above = do
+                  let max_search = min(idx, 50)  # Search up to 50 lines above
+                  | foreach (offset, range(1, max_search, 1)):
+                      let check_idx = idx - offset
+                      | let check_line = lines[check_idx]
+                      | if (!is_valid_table_row(check_line)):
+                          false  # Hit non-table row, stop searching
+                        elif (is_table_separator_line(check_line)):
+                          true  # Found separator!
+                        else: None  # Continue searching
+                    end | compact() | if (len() > 0): first() else: false
+                  end
+                | let find_separator_below = do
+                  let max_search = min(len(lines) - idx - 1, 50)  # Search up to 50 lines below
+                  | foreach (offset, range(1, max_search, 1)):
+                      let check_idx = idx + offset
+                      | let check_line = lines[check_idx]
+                      | if (!is_valid_table_row(check_line)):
+                          false  # Hit non-table row, stop searching
+                        elif (is_table_separator_line(check_line)):
+                          true  # Found separator!
+                        else: None  # Continue searching
+                    end | compact() | if (len() > 0): first() else: false
+                  end
+                | find_separator_above || find_separator_below
               end
         end
   end

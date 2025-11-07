@@ -6,7 +6,7 @@ set -e
 
 readonly LINT_MQ_REPO="harehare/mdlint.mq"
 readonly LINT_MQ_INSTALL_DIR="$HOME/.mdlint.mq"
-readonly MQ_MODULE_DIR="$HOME/.mq/modules"
+readonly MQ_MODULE_DIR="$HOME/.mq"
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -36,12 +36,12 @@ error() {
 show_logo() {
     cat << 'EOF'
 
-    ██╗     ██╗███╗   ██╗████████╗   ███╗   ███╗ ██████╗
-    ██║     ██║████╗  ██║╚══██╔══╝   ████╗ ████║██╔═══██╗
-    ██║     ██║██╔██╗ ██║   ██║      ██╔████╔██║██║   ██║
-    ██║     ██║██║╚██╗██║   ██║      ██║╚██╔╝██║██║▄▄ ██║
-    ███████╗██║██║ ╚████║   ██║      ██║ ╚═╝ ██║╚██████╔╝
-    ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝      ╚═╝     ╚═╝ ╚══▀▀═╝
+    ███╗   ███╗██████╗ ██╗     ██╗███╗   ██╗████████╗   ███╗   ███╗ ██████╗
+    ████╗ ████║██╔══██╗██║     ██║████╗  ██║╚══██╔══╝   ████╗ ████║██╔═══██╗
+    ██╔████╔██║██║  ██║██║     ██║██╔██╗ ██║   ██║      ██╔████╔██║██║   ██║
+    ██║╚██╔╝██║██║  ██║██║     ██║██║╚██╗██║   ██║      ██║╚██╔╝██║██║▄▄ ██║
+    ██║ ╚═╝ ██║██████╔╝███████╗██║██║ ╚████║   ██║      ██║ ╚═╝ ██║╚██████╔╝
+    ╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝      ╚═╝     ╚═╝ ╚══▀▀═╝
 
 EOF
     echo -e "${BOLD}${CYAN}  A Markdown Linter for mq Language${NC}"
@@ -49,6 +49,29 @@ EOF
     echo ""
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
+}
+
+# Install mq if not installed
+install_mq() {
+    if command -v mq &> /dev/null; then
+        log "mq is already installed: $(which mq)"
+        return 0
+    fi
+
+    warn "mq is not installed. Installing mq..."
+
+    # Install mq using official install script
+    log "Running mq installation script from https://mqlang.org/install.sh"
+
+    if ! curl -sSL https://mqlang.org/install.sh | bash; then
+        error "Failed to install mq"
+    fi
+
+    if command -v mq &> /dev/null; then
+        log "✓ mq installed successfully: $(which mq)"
+    else
+        error "mq installation failed. Please try manually: curl -sSL https://mqlang.org/install.sh | bash"
+    fi
 }
 
 # Check if mq is installed
@@ -172,8 +195,8 @@ main() {
         error "curl is required but not installed"
     fi
 
-    # Check if mq is installed
-    check_mq_installed
+    # Install mq if not installed
+    install_mq
 
     # Get latest version
     local version
