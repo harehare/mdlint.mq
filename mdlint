@@ -46,6 +46,7 @@ CONFIG_FILE=".lintrc.toml"
 QUIET=false
 JSON_OUTPUT=false
 FILES=()
+FILE_ARGS=()
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -76,18 +77,37 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
         *)
-            FILES+=("$1")
+            FILE_ARGS+=("$1")
             shift
             ;;
     esac
 done
 
-# If no files specified, use fd to find all .md files (non-recursive)
-if [ ${#FILES[@]} -eq 0 ]; then
-    if ! command -v fd >/dev/null 2>&1; then
-        echo -e "${RED}Error: 'fd' command not found. Please install 'fd' to use this script.${NC}" >&2
-        exit 1
+# Check if fd is available
+if ! command -v fd >/dev/null 2>&1; then
+    echo -e "${RED}Error: 'fd' command not found. Please install 'fd' to use this script.${NC}" >&2
+    exit 1
+fi
+
+# Process file arguments
+if [ ${#FILE_ARGS[@]} -gt 0 ]; then
+    for arg in "${FILE_ARGS[@]}"; do
+        # Check if argument contains glob patterns
+        if [[ "$arg" == *"*"* ]]; then
+            # Use fd to expand glob pattern
+            mapfile -t -O ${#FILES[@]} FILES < <(fd --type f --extension md --glob "$arg")
+        else
+            # Not a glob pattern, add as-is
+            FILES+=("$arg")
+        fi
+    done
+
+    if [ ${#FILES[@]} -eq 0 ]; then
+        echo -e "${YELLOW}No matching files found${NC}"
+        exit 0
     fi
+else
+    # If no files specified, use fd to find all .md files
     mapfile -t FILES < <(fd --type f --extension md --strip-cwd-prefix)
 
     if [ ${#FILES[@]} -eq 0 ]; then
@@ -95,6 +115,8 @@ if [ ${#FILES[@]} -eq 0 ]; then
         exit 0
     fi
 fi
+
+echo
 
 # Check if config file exists
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -108,52 +130,31 @@ else
     CONFIG_LOAD="mdlint::load_config(\"$CONFIG_FILE\") | merge_config()"
 fi
 
-# Validate files and build JSON array of file paths
-VALID_FILES=()
-for file in "${FILES[@]}"; do
-    if [ ! -f "$file" ]; then
-        echo -e "${RED}Error: File '$file' not found${NC}" >&2
-        continue
-    fi
-    VALID_FILES+=("$file")
-done
-
-if [ ${#VALID_FILES[@]} -eq 0 ]; then
-    echo -e "${RED}No valid files to lint${NC}" >&2
-    exit 1
-fi
-
 # Process each file with a separate mq execution
 HAS_ERROR=false
 
-for file in "${VALID_FILES[@]}"; do
-    # Escape file path for JSON (escape backslashes and quotes)
-    ESCAPED_FILE=$(printf '%s' "$file" | sed 's/\\/\\\\/g; s/"/\\"/g')
+if [ "$JSON_OUTPUT" = true ]; then
+    # JSON output
+    MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | mdlint::lint_all_with_config(config) | mdlint::generate_json_report()"
 
-    if [ "$JSON_OUTPUT" = true ]; then
-        # JSON output
-        MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | read_file(\"$ESCAPED_FILE\") | mdlint::lint_all_with_config(config) | mdlint::generate_json_report() | print()"
-
-        if OUTPUT=$(mq -I raw -F text "$MQ_SCRIPT" 2>&1); then
-            echo "$OUTPUT"
-        else
-            echo -e "${RED}Error running linter on $file:${NC}" >&2
-            echo "$OUTPUT" >&2
-            HAS_ERROR=true
-        fi
+    if OUTPUT=$(mq -S 's"\n${__FILE__}\n"' -I raw -F text "$MQ_SCRIPT" "${FILES[@]}" 2>&1); then
+        echo "$OUTPUT"
     else
-        # Text output
-        MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | print(\"\n\" + \"$ESCAPED_FILE\" + \"\n\") | read_file(\"$ESCAPED_FILE\") | mdlint::lint_all_with_config(config) | mdlint::generate_report() | print()"
-
-        if ! mq -I raw "$MQ_SCRIPT" 2>&1; then
-            echo -e "${RED}Error running linter on $file${NC}" >&2
-            HAS_ERROR=true
-        fi
+        echo -e "${RED}Error running linter on $file:${NC}" >&2
+        echo "$OUTPUT" >&2
+        HAS_ERROR=true
     fi
-done
+else
+    MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | mdlint::lint_all_with_config(config) | mdlint::generate_report()"
+
+    if ! mq -S 's"\n${__FILE__}\n"' -I raw "$MQ_SCRIPT" "${FILES[@]}" 2>&1; then
+        echo -e "${RED}Error running linter on $file${NC}" >&2
+        HAS_ERROR=true
+    fi
+fi
 
 if [ "$JSON_OUTPUT" = false ] && [ "$QUIET" = false ]; then
-    echo -e "\n${GREEN}Linted ${#VALID_FILES[@]} file(s)${NC}"
+    echo -e "\n${GREEN}Linted ${#FILES[@]} file(s)${NC}"
 fi
 
 if [ "$HAS_ERROR" = true ]; then

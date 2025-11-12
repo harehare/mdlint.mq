@@ -1113,7 +1113,7 @@ else:
         | if (regex_match(trimmed, "^[\\-\\*\\+] ")):
             do
               # Count spaces after marker
-              let marker_end = 1              # Single character marker
+              let marker_end = 1 # Single character marker
               | let after_marker = slice(trimmed, marker_end, len(trimmed))
               | let space_count = 0
               | let counting = true
@@ -1932,7 +1932,7 @@ else:
                   # Extract label from [label]: url
                   let label_match = regex_match(trimmed, "^\\[([^\\]]+)\\]:")
                   | if (label_match):
-                      downcase(trimmed)                    # Store the whole line for now
+                      downcase(trimmed) # Store the whole line for now
                     else: None
                 end
               else: None
@@ -2220,27 +2220,27 @@ else:
                 # Find separator line by searching up and down through consecutive table rows
                 # Search upward for separator
                 let find_separator_above = do
-                                  let max_search = min(idx, 50)                                  # Search up to 50 lines above
+                                  let max_search = min(idx, 50) # Search up to 50 lines above
                                   | foreach (offset, range(1, max_search, 1)):
                                       let check_idx = idx - offset
                                       | let check_line = lines[check_idx]
                                       | if (!is_valid_table_row(check_line)):
-                                          false                                        # Hit non-table row, stop searching
+                                          false # Hit non-table row, stop searching
                                         elif (is_table_separator_line(check_line)):
-                                          true                                        # Found separator!
-                                        else: None                                    # Continue searching
+                                          true # Found separator!
+                                        else: None # Continue searching
                                     end | compact() | if (len() > 0): first() else: false
                                 end
                 | let find_separator_below = do
-                                  let max_search = min(len(lines) - idx - 1, 50)                                  # Search up to 50 lines below
+                                  let max_search = min(len(lines) - idx - 1, 50) # Search up to 50 lines below
                                   | foreach (offset, range(1, max_search, 1)):
                                       let check_idx = idx + offset
                                       | let check_line = lines[check_idx]
                                       | if (!is_valid_table_row(check_line)):
-                                          false                                        # Hit non-table row, stop searching
+                                          false # Hit non-table row, stop searching
                                         elif (is_table_separator_line(check_line)):
-                                          true                                        # Found separator!
-                                        else: None                                    # Continue searching
+                                          true # Found separator!
+                                        else: None # Continue searching
                                     end | compact() | if (len() > 0): first() else: false
                                 end
                 | find_separator_above || find_separator_below
