@@ -85,7 +85,7 @@ check_mq_installed() {
 # Download files from GitHub
 download_files() {
     local version="$1"
-    local files=("mdlint.mq" ".lintrc.toml")
+    local files=("mdlint.mq")
 
     log "Downloading mdlint.mq files (version: $version)..."
 
