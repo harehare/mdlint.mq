@@ -85,7 +85,7 @@ check_mq_installed() {
 # Download files from GitHub
 download_files() {
     local version="$1"
-    local files=("mdlint.mq")
+    local files=("mdlint.mq" "mdlint")
 
     log "Downloading mdlint.mq files (version: $version)..."
 
@@ -124,6 +124,15 @@ install_to_mq_modules() {
         cp "$LINT_MQ_INSTALL_DIR/.lintrc.toml" "$MQ_MODULE_DIR/.lintrc.toml"
         log "✓ Installed default config to $MQ_MODULE_DIR/.lintrc.toml"
     fi
+
+    # Install mdlint executable script
+    if [[ -f "$LINT_MQ_INSTALL_DIR/mdlint" ]]; then
+        cp "$LINT_MQ_INSTALL_DIR/mdlint" "$MQ_MODULE_DIR/bin/mdlint"
+        chmod +x "$MQ_MODULE_DIR/bin/mdlint"
+        log "✓ Installed mdlint executable to $MQ_MODULE_DIR/bin/mdlint"
+    else
+        warn "mdlint executable script not found in $LINT_MQ_INSTALL_DIR"
+    fi
 }
 
 # Get the latest release version from GitHub
@@ -141,8 +150,9 @@ get_latest_version() {
 
 # Verify installation
 verify_installation() {
-    if [[ -f "$MQ_MODULE_DIR/mdlint.mq" ]]; then
+    if [[ -f "$MQ_MODULE_DIR/mdlint.mq" ]] && [[ -f "$MQ_MODULE_DIR/mdlint" ]]; then
         log "✓ mdlint.mq installation verified"
+        log "✓ mdlint executable verified"
         log "Installation verification successful!"
         return 0
     else
@@ -157,26 +167,39 @@ show_post_install() {
     echo -e "${BOLD}${GREEN}✨ mdlint.mq installed successfully! ✨${NC}"
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
+    echo -e "${BOLD}${CYAN}📦 Installation Location:${NC}"
+    echo -e "  ${GREEN}▶${NC} Module: ${BLUE}$MQ_MODULE_DIR/mdlint.mq${NC}"
+    echo -e "  ${GREEN}▶${NC} Executable: ${BLUE}$MQ_MODULE_DIR/mdlint${NC}"
+    echo ""
+
+    # Check if MQ_MODULE_DIR is in PATH
+    if [[ ":$PATH:" != *":$MQ_MODULE_DIR:"* ]]; then
+        echo -e "${BOLD}${YELLOW}⚠ PATH Configuration Required:${NC}"
+        echo -e "  Add ${BLUE}$MQ_MODULE_DIR${NC} to your PATH to use the ${CYAN}mdlint${NC} command."
+        echo ""
+        echo -e "  ${YELLOW}For bash:${NC}"
+        echo -e "    ${CYAN}echo 'export PATH=\"\$HOME/.mq:\$PATH\"' >> ~/.bashrc${NC}"
+        echo -e "    ${CYAN}source ~/.bashrc${NC}"
+        echo ""
+        echo -e "  ${YELLOW}For zsh:${NC}"
+        echo -e "    ${CYAN}echo 'export PATH=\"\$HOME/.mq:\$PATH\"' >> ~/.zshrc${NC}"
+        echo -e "    ${CYAN}source ~/.zshrc${NC}"
+        echo ""
+    else
+        log "✓ $MQ_MODULE_DIR is already in your PATH"
+        echo ""
+    fi
+
     echo -e "${BOLD}${CYAN}🚀 Getting Started:${NC}"
     echo ""
-    echo -e "  ${YELLOW}1.${NC} Create a .mq script file:"
-    echo -e "     ${CYAN}cat > lint_example.mq << 'EOF'"
-    echo -e "include \"lint\""
-    echo -e ""
-    echo -e "let content = to_markdown(read_file(\"README.md\"))"
-    echo -e "| let result = lint_all(content)"
-    echo -e "| generate_report(result)"
-    echo -e "EOF${NC}"
+    echo -e "  ${YELLOW}1.${NC} Lint a Markdown file:"
+    echo -e "     ${CYAN}mdlint README.md${NC}"
     echo ""
-    echo -e "  ${YELLOW}2.${NC} Run the linter:"
-    echo -e "     ${CYAN}mq -L $MQ_MODULE_DIR lint_example.mq${NC}"
+    echo -e "  ${YELLOW}2.${NC} Lint all Markdown files in current directory:"
+    echo -e "     ${CYAN}mdlint${NC}"
     echo ""
-    echo -e "  ${YELLOW}3.${NC} Or use it directly:"
-    echo -e "     ${CYAN}mq -L $MQ_MODULE_DIR 'include \"lint\" | to_markdown(read_file(\"README.md\")) | lint_all(.) | generate_report(.)'${NC}"
-    echo ""
-    echo -e "${BOLD}${CYAN}⚡ Configuration:${NC}"
-    echo -e "  ${GREEN}▶${NC} Default config: ${BLUE}$MQ_MODULE_DIR/.lintrc.toml${NC}"
-    echo -e "  ${GREEN}▶${NC} Copy to your project: ${CYAN}cp $MQ_MODULE_DIR/.lintrc.toml .lintrc.toml${NC}"
+    echo -e "  ${YELLOW}3.${NC} Lint with custom configuration:"
+    echo -e "     ${CYAN}mdlint -c .lintrc.toml *.md${NC}"
     echo ""
     echo -e "${BOLD}${CYAN}📚 Learn More:${NC}"
     echo -e "  ${GREEN}▶${NC} Repository: ${BLUE}https://github.com/$LINT_MQ_REPO${NC}"
