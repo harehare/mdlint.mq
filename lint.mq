@@ -2560,5 +2560,4 @@ Found ${total} issues:
       "issues": issues
     }
   end
-
 end

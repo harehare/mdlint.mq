@@ -12,10 +12,10 @@ NC='\033[0m' # No Color
 
 show_help() {
     cat << EOF
-mqlint - Markdown linter using mdlint.mq
+mq-lint - Markdown linter using lint.mq
 
 Usage:
-  mqlint [OPTIONS] [FILE...]
+  mq-lint [OPTIONS] [FILE...]
 
 Options:
   -h, --help              Show this help message
@@ -28,17 +28,17 @@ Arguments:
   FILE                    Markdown file(s) to lint (default: all .md files)
 
 Examples:
-  mqlint README.md        Lint README.md
-  mqlint *.md             Lint all .md files
-  mqlint                  Lint all .md files in current directory
-  mqlint -c custom.toml   Use custom config file
-  mqlint -j README.md     Output in JSON format
+  mq-lint README.md        Lint README.md
+  mq-lint *.md             Lint all .md files
+  mq-lint                  Lint all .md files in current directory
+  mq-lint -c custom.toml   Use custom config file
+  mq-lint -j README.md     Output in JSON format
 
 EOF
 }
 
 show_version() {
-    echo "mqlint version $VERSION"
+    echo "mq-lint version $VERSION"
 }
 
 # Default values
@@ -125,9 +125,9 @@ if [ ! -f "$CONFIG_FILE" ]; then
         exit 1
     fi
     # Use default config if .lintrc.toml doesn't exist
-    CONFIG_LOAD="mdlint::default_config()"
+    CONFIG_LOAD="lint::default_config()"
 else
-    CONFIG_LOAD="mdlint::load_config(\"$CONFIG_FILE\") | merge_config()"
+    CONFIG_LOAD="lint::load_config(\"$CONFIG_FILE\") | merge_config()"
 fi
 
 # Process each file with a separate mq execution
@@ -135,7 +135,7 @@ HAS_ERROR=false
 
 if [ "$JSON_OUTPUT" = true ]; then
     # JSON output
-    MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | mdlint::lint_all_with_config(config) | mdlint::generate_json_report()"
+    MQ_SCRIPT="import \"lint\" | let config = $CONFIG_LOAD | lint::lint_all_with_config(config) | lint::generate_json_report()"
 
     if OUTPUT=$(mq -S 's"\n${__FILE__}\n"' -I raw -F text "$MQ_SCRIPT" "${FILES[@]}" 2>&1); then
         echo "$OUTPUT"
@@ -145,7 +145,7 @@ if [ "$JSON_OUTPUT" = true ]; then
         HAS_ERROR=true
     fi
 else
-    MQ_SCRIPT="import \"mdlint\" | let config = $CONFIG_LOAD | mdlint::lint_all_with_config(config) | mdlint::generate_report()"
+    MQ_SCRIPT="import \"lint\" | let config = $CONFIG_LOAD | lint::lint_all_with_config(config) | lint::generate_report()"
 
     if ! mq -S 's"\n${__FILE__}\n"' -I raw "$MQ_SCRIPT" "${FILES[@]}" 2>&1; then
         echo -e "${RED}Error running linter on $file${NC}" >&2

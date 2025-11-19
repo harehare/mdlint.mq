@@ -1,4 +1,4 @@
-<h1 align="center">mdlint.mq</h1>
+<h1 align="center">mq-lint</h1>
 
 <p align="center">
   <a href="https://github.com/harehare/mq"><img src="https://img.shields.io/badge/mq-language-orange.svg" alt="mq language"></a>
@@ -17,15 +17,15 @@
 
 ### Quick Installation
 
-Install mdlint.mq using the automated installation script:
+Install lint.mq using the automated installation script:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/harehare/mdlint.mq/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harehare/mq-lint/main/install.sh | bash
 ```
 
 This script will:
 1. Check if `mq` is installed (and install it if needed)
-2. Download the latest version of `mdlint.mq` and configuration files
+2. Download the latest version of `lint.mq` and configuration files
 3. Install files to `~/.mq/modules/`
 4. Set up the default configuration
 
@@ -38,43 +38,43 @@ If you prefer to install manually:
 curl -sSL https://mqlang.org/install.sh | bash
 
 # 2. Clone the repository
-git clone https://github.com/harehare/mdlint.mq.git
-cd mdlint.mq
+git clone https://github.com/harehare/mq-lint.git
+cd lint.mq
 
 # 3. Copy files to mq module directory
 mkdir -p ~/.mq
-cp mdlint.mq ~/.mq
+cp lint.mq ~/.mq
 cp .lintrc.toml ~/.mq
 
-# 4. (Optional) Make mdlint script executable and add to PATH
-chmod +x mdlint
+# 4. (Optional) Make mq-lint script executable and add to PATH
+chmod +x mq-lint
 # Add to PATH or create a symlink, e.g.:
-# ln -s $(pwd)/mdlint /usr/local/bin/mdlint
+# ln -s $(pwd)/mq-lint /usr/local/bin/mq-lint
 ```
 
 ### Verify Installation
 
-After installation, verify that mdlint.mq is working:
+After installation, verify that lint.mq is working:
 
 ```bash
-mq 'import "mdlint" | "# Test\n\n## Section\n" | mdlint::lint_all() | mdlint::generate_report()'
+mq 'import "lint" | "# Test\n\n## Section\n" | lint::lint_all() | lint::generate_report()'
 ```
 
 You should see: `✅ No issues found! Your Markdown is looking great.`
 
 ## Quick Start
 
-Using the mdlint command (after installation):
+Using the mq-lint command (after installation):
 
 ```bash
 # Lint a single file
-mdlint README.md
+mq-lint README.md
 
 # Lint all Markdown files in current directory
-mdlint
+mq-lint
 
 # Lint with custom configuration
-mdlint -c .lintrc.toml *.md
+mq-lint -c .lintrc.toml *.md
 ```
 
 Or use as a library in your mq scripts:
@@ -93,7 +93,7 @@ let content = to_markdown(read_file("document.md"))
 
 ## Overview
 
-`mdlint.mq` is a linting tool that validates Markdown files against established style rules from [markdownlint](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md). It helps maintain consistent and high-quality Markdown documentation.
+`lint.mq` is a linting tool that validates Markdown files against established style rules from [markdownlint](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md). It helps maintain consistent and high-quality Markdown documentation.
 
 ## Features
 
@@ -207,7 +207,7 @@ This linter implements **50 markdownlint rules** organized into the following ca
 
 ## Configuration
 
-mdlint.mq supports configuration via a TOML file (`.lintrc.toml`) that allows you to customize linting behavior.
+lint.mq supports configuration via a TOML file (`.lintrc.toml`) that allows you to customize linting behavior.
 
 ### Configuration File
 
@@ -351,60 +351,60 @@ let content = to_markdown(read_file("document.md"))
 
 ## Usage
 
-### Using the mdlint Command
+### Using the mq-lint Command
 
-The easiest way to use mdlint.mq is through the `mdlint` shell script:
+The easiest way to use lint.mq is through the `mq-lint` shell script:
 
 #### Basic Usage
 
 Lint a single file:
 
 ```bash
-./mdlint README.md
+./mq-lint README.md
 ```
 
 Lint multiple files:
 
 ```bash
-./mdlint README.md CONTRIBUTING.md docs/guide.md
+./mq-lint README.md CONTRIBUTING.md docs/guide.md
 ```
 
 Lint all Markdown files in the current directory:
 
 ```bash
-./mdlint
+./mq-lint
 ```
 
 #### Options
 
 ```bash
 # Use a custom configuration file
-./mdlint -c custom-config.toml README.md
+./mq-lint -c custom-config.toml README.md
 
 # Output results in JSON format
-./mdlint -j README.md
+./mq-lint -j README.md
 
 # Quiet mode (suppress info messages)
-./mdlint -q README.md
+./mq-lint -q README.md
 
 # Show help
-./mdlint --help
+./mq-lint --help
 
 # Show version
-./mdlint --version
+./mq-lint --version
 ```
 
 #### Examples
 
 ```bash
 # Lint all markdown files with custom config
-./mdlint -c .lintrc.toml
+./mq-lint -c .lintrc.toml
 
 # Lint specific files and output JSON
-./mdlint -j *.md
+./mq-lint -j *.md
 
 # Lint all files in quiet mode
-./mdlint -q
+./mq-lint -q
 ```
 
 ### Using as a Library
@@ -501,17 +501,6 @@ When no issues are found:
 ✅ No issues found! Your Markdown is looking great.
 ```
 
-## File Structure
-
-```bash
-mdlint.mq/
-├── .lintrc.toml      # Configuration file
-├── mdlint.mq           # Main linter implementation
-├── lint_tests.mq     # Comprehensive test suite
-├── README.md         # This file
-└── sample.md         # Sample Markdown file for testing
-```
-
 ## Testing
 
 The project includes a comprehensive test suite in `lint_tests.mq` that covers all implemented rules.
@@ -519,7 +508,7 @@ The project includes a comprehensive test suite in `lint_tests.mq` that covers a
 ### Running Tests
 
 ```bash
-mq lint_tests.mq
+mq -f lint_tests.mq
 ```
 
 ### Test Coverage

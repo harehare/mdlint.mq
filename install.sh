@@ -2,11 +2,12 @@
 
 set -e
 
-# mdlint.mq installation script
+# lint.mq installation script
 
-readonly LINT_MQ_REPO="harehare/mdlint.mq"
-readonly LINT_MQ_INSTALL_DIR="$HOME/.mdlint.mq"
+readonly LINT_MQ_REPO="harehare/lint.mq"
+readonly LINT_MQ_INSTALL_DIR="$HOME/.lint.mq"
 readonly MQ_MODULE_DIR="$HOME/.mq"
+readonly MQ_BIN_DIR="$HOME/.mq/bin"
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -32,16 +33,16 @@ error() {
     exit 1
 }
 
-# Display the mdlint.mq logo
+# Display the mq-lint logo
 show_logo() {
     cat << 'EOF'
 
-    ███╗   ███╗██████╗ ██╗     ██╗███╗   ██╗████████╗   ███╗   ███╗ ██████╗
-    ████╗ ████║██╔══██╗██║     ██║████╗  ██║╚══██╔══╝   ████╗ ████║██╔═══██╗
-    ██╔████╔██║██║  ██║██║     ██║██╔██╗ ██║   ██║      ██╔████╔██║██║   ██║
-    ██║╚██╔╝██║██║  ██║██║     ██║██║╚██╗██║   ██║      ██║╚██╔╝██║██║▄▄ ██║
-    ██║ ╚═╝ ██║██████╔╝███████╗██║██║ ╚████║   ██║      ██║ ╚═╝ ██║╚██████╔╝
-    ╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝      ╚═╝     ╚═╝ ╚══▀▀═╝
+    ███╗   ███╗ ██████╗       ██╗     ██╗███╗   ██╗████████╗
+    ████╗ ████║██╔═══██╗      ██║     ██║████╗  ██║╚══██╔══╝
+    ██╔████╔██║██║   ██║█████╗██║     ██║██╔██╗ ██║   ██║
+    ██║╚██╔╝██║██║▄▄ ██║╚════╝██║     ██║██║╚██╗██║   ██║
+    ██║ ╚═╝ ██║╚██████╔╝      ███████╗██║██║ ╚████║   ██║
+    ╚═╝     ╚═╝ ╚══▀▀═╝       ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝
 
 EOF
     echo -e "${BOLD}${CYAN}  A Markdown Linter for mq Language${NC}"
@@ -85,9 +86,9 @@ check_mq_installed() {
 # Download files from GitHub
 download_files() {
     local version="$1"
-    local files=("mdlint.mq" "mdlint")
+    local files=("lint.mq" "mq-lint")
 
-    log "Downloading mdlint.mq files (version: $version)..."
+    log "Downloading lint.mq files (version: $version)..."
 
     # Create installation directory
     mkdir -p "$LINT_MQ_INSTALL_DIR"
@@ -106,17 +107,17 @@ download_files() {
 
 # Install to mq module directory
 install_to_mq_modules() {
-    log "Installing mdlint.mq to mq module directory..."
+    log "Installing lint.mq to mq module directory..."
 
     # Create mq module directory if it doesn't exist
     mkdir -p "$MQ_MODULE_DIR"
 
-    # Copy mdlint.mq file
-    if [[ -f "$LINT_MQ_INSTALL_DIR/mdlint.mq" ]]; then
-        cp "$LINT_MQ_INSTALL_DIR/mdlint.mq" "$MQ_MODULE_DIR/mdlint.mq"
-        log "✓ Installed mdlint.mq to $MQ_MODULE_DIR/mdlint.mq"
+    # Copy lint.mq file
+    if [[ -f "$LINT_MQ_INSTALL_DIR/lint.mq" ]]; then
+        cp "$LINT_MQ_INSTALL_DIR/lint.mq" "$MQ_MODULE_DIR/lint.mq"
+        log "✓ Installed lint.mq to $MQ_MODULE_DIR/lint.mq"
     else
-        error "mdlint.mq file not found in $LINT_MQ_INSTALL_DIR"
+        error "lint.mq file not found in $LINT_MQ_INSTALL_DIR"
     fi
 
     # Copy default config file
@@ -125,13 +126,14 @@ install_to_mq_modules() {
         log "✓ Installed default config to $MQ_MODULE_DIR/.lintrc.toml"
     fi
 
-    # Install mdlint executable script
-    if [[ -f "$LINT_MQ_INSTALL_DIR/mdlint" ]]; then
-        cp "$LINT_MQ_INSTALL_DIR/mdlint" "$MQ_MODULE_DIR/bin/mdlint"
-        chmod +x "$MQ_MODULE_DIR/bin/mdlint"
-        log "✓ Installed mdlint executable to $MQ_MODULE_DIR/bin/mdlint"
+    # Install mq-lint executable script
+    if [[ -f "$LINT_MQ_INSTALL_DIR/mq-lint" ]]; then
+        mkdir -p "$MQ_BIN_DIR"
+        cp "$LINT_MQ_INSTALL_DIR/mq-lint" "$MQ_BIN_DIR/mq-lint"
+        chmod +x "$MQ_BIN_DIR/mq-lint"
+        log "✓ Installed mq-lint executable to $MQ_BIN_DIR/mq-lint"
     else
-        warn "mdlint executable script not found in $LINT_MQ_INSTALL_DIR"
+        warn "mq-lint executable script not found in $LINT_MQ_INSTALL_DIR"
     fi
 }
 
@@ -150,13 +152,13 @@ get_latest_version() {
 
 # Verify installation
 verify_installation() {
-    if [[ -f "$MQ_MODULE_DIR/mdlint.mq" ]] && [[ -f "$MQ_MODULE_DIR/mdlint" ]]; then
-        log "✓ mdlint.mq installation verified"
-        log "✓ mdlint executable verified"
+    if [[ -f "$MQ_MODULE_DIR/lint.mq" ]] && [[ -f "$MQ_BIN_DIR/mq-lint" ]]; then
+        log "✓ lint.mq installation verified"
+        log "✓ mq-lint executable verified"
         log "Installation verification successful!"
         return 0
     else
-        error "mdlint.mq installation verification failed"
+        error "lint.mq installation verification failed"
     fi
 }
 
@@ -164,42 +166,42 @@ verify_installation() {
 show_post_install() {
     echo ""
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BOLD}${GREEN}✨ mdlint.mq installed successfully! ✨${NC}"
+    echo -e "${BOLD}${GREEN}✨ lint.mq installed successfully! ✨${NC}"
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     echo -e "${BOLD}${CYAN}📦 Installation Location:${NC}"
-    echo -e "  ${GREEN}▶${NC} Module: ${BLUE}$MQ_MODULE_DIR/mdlint.mq${NC}"
-    echo -e "  ${GREEN}▶${NC} Executable: ${BLUE}$MQ_MODULE_DIR/mdlint${NC}"
+    echo -e "  ${GREEN}▶${NC} Module: ${BLUE}$MQ_MODULE_DIR/lint.mq${NC}"
+    echo -e "  ${GREEN}▶${NC} Executable: ${BLUE}$MQ_BIN_DIR/mq-lint${NC}"
     echo ""
 
-    # Check if MQ_MODULE_DIR is in PATH
-    if [[ ":$PATH:" != *":$MQ_MODULE_DIR:"* ]]; then
+    # Check if MQ_BIN_DIR is in PATH
+    if [[ ":$PATH:" != *":$MQ_BIN_DIR:"* ]]; then
         echo -e "${BOLD}${YELLOW}⚠ PATH Configuration Required:${NC}"
-        echo -e "  Add ${BLUE}$MQ_MODULE_DIR${NC} to your PATH to use the ${CYAN}mdlint${NC} command."
+        echo -e "  Add ${BLUE}$MQ_BIN_DIR${NC} to your PATH to use the ${CYAN}mq-lint${NC} command."
         echo ""
         echo -e "  ${YELLOW}For bash:${NC}"
-        echo -e "    ${CYAN}echo 'export PATH=\"\$HOME/.mq:\$PATH\"' >> ~/.bashrc${NC}"
+        echo -e "    ${CYAN}echo 'export PATH=\"\$HOME/.mq/bin:\$PATH\"' >> ~/.bashrc${NC}"
         echo -e "    ${CYAN}source ~/.bashrc${NC}"
         echo ""
         echo -e "  ${YELLOW}For zsh:${NC}"
-        echo -e "    ${CYAN}echo 'export PATH=\"\$HOME/.mq:\$PATH\"' >> ~/.zshrc${NC}"
+        echo -e "    ${CYAN}echo 'export PATH=\"\$HOME/.mq/bin:\$PATH\"' >> ~/.zshrc${NC}"
         echo -e "    ${CYAN}source ~/.zshrc${NC}"
         echo ""
     else
-        log "✓ $MQ_MODULE_DIR is already in your PATH"
+        log "✓ $MQ_BIN_DIR is already in your PATH"
         echo ""
     fi
 
     echo -e "${BOLD}${CYAN}🚀 Getting Started:${NC}"
     echo ""
     echo -e "  ${YELLOW}1.${NC} Lint a Markdown file:"
-    echo -e "     ${CYAN}mdlint README.md${NC}"
+    echo -e "     ${CYAN}mq-lint README.md${NC}"
     echo ""
     echo -e "  ${YELLOW}2.${NC} Lint all Markdown files in current directory:"
-    echo -e "     ${CYAN}mdlint${NC}"
+    echo -e "     ${CYAN}mq-lint${NC}"
     echo ""
     echo -e "  ${YELLOW}3.${NC} Lint with custom configuration:"
-    echo -e "     ${CYAN}mdlint -c .lintrc.toml *.md${NC}"
+    echo -e "     ${CYAN}mq-lint -c .lintrc.toml *.md${NC}"
     echo ""
     echo -e "${BOLD}${CYAN}📚 Learn More:${NC}"
     echo -e "  ${GREEN}▶${NC} Repository: ${BLUE}https://github.com/$LINT_MQ_REPO${NC}"
@@ -243,7 +245,7 @@ main() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         --help|-h)
-            echo "mdlint.mq installation script"
+            echo "lint.mq installation script"
             echo ""
             echo "Usage: $0 [options]"
             echo ""
@@ -253,7 +255,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         --version|-v)
-            echo "mdlint.mq installer v1.0.0"
+            echo "lint.mq installer v1.0.0"
             exit 0
             ;;
         *)

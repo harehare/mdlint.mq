@@ -1,16 +1,16 @@
-import "mdlint"
+import "mq-lint"
 | include "test"
 
 # Test data for MD001 - Heading levels should only increment by one level at a time
 def test_md001_valid_heading_progression():
   let content = to_markdown("# H1\n## H2\n### H3\n")
-  | let result = mdlint::md001(content)
+  | let result = mq-lint::md001(content)
   | assert_eq(len(result), 0)
 end
 
 def test_md001_invalid_heading_skip():
   let content = to_markdown("# H1\n### H3 (skipped H2)\n")
-  | let result = mdlint::md001(content)
+  | let result = mq-lint::md001(content)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD001")
   | assert_eq(result[0]["severity"], "error")
@@ -18,16 +18,16 @@ end
 
 # Test data for MD002 - First header should be a top level header
 def test_md002_valid_first_header():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# First Header\n## Second Header\n")
-  | let result = mdlint::md002(content, config)
+  | let result = mq-lint::md002(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md002_invalid_first_header():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("## Not H1\n### Another Header\n")
-  | let result = mdlint::md002(content, config)
+  | let result = mq-lint::md002(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD002")
   | assert_eq(result[0]["severity"], "error")
@@ -35,20 +35,20 @@ end
 
 # Test data for MD003 - Heading style consistency
 def test_md003_consistent_atx_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md003_inconsistent_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n## Header 2\n### Header 3 ###\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD003")
   | assert_eq(result[0]["severity"], "error")
@@ -64,7 +64,7 @@ def test_md003_enforce_atx_style():
   | let raw_content = "# Header 1\n## Header 2 ##\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD003")
   | assert_eq(result[0]["details"]["expected"], "atx")
@@ -81,18 +81,18 @@ def test_md003_enforce_atx_closed_style():
   | let raw_content = "# Header 1 #\n## Header 2 ##\n### Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "atx_closed")
   | assert_eq(result[0]["details"]["found"], "atx")
 end
 
 def test_md003_consistent_setext_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Header 1\n========\n\nHeader 2\n--------\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -106,7 +106,7 @@ def test_md003_enforce_setext_style():
   | let raw_content = "Header 1\n========\n\n## Header 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD003")
   | assert_eq(result[0]["details"]["expected"], "setext")
@@ -114,11 +114,11 @@ def test_md003_enforce_setext_style():
 end
 
 def test_md003_mixed_atx_and_setext():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n\nHeader 2\n--------\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD003")
   | assert_eq(result[0]["details"]["expected"], "atx")
@@ -126,57 +126,57 @@ def test_md003_mixed_atx_and_setext():
 end
 
 def test_md003_setext_h1_only():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Header 1\n========\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md003_setext_h2_only():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Header 2\n--------\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md003(content, lines, config)
+  | let result = mq-lint::md003(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD004 - Unordered list style
 def test_md004_consistent_dash_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "- Item 1\n- Item 2\n- Item 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md004_consistent_asterisk_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n* Item 2\n* Item 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md004_consistent_plus_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "+ Item 1\n+ Item 2\n+ Item 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md004_inconsistent_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "- Item 1\n* Item 2\n+ Item 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD004")
   | assert_eq(result[0]["severity"], "error")
@@ -192,7 +192,7 @@ def test_md004_enforce_dash_style():
   | let raw_content = "- Item 1\n* Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD004")
   | assert_eq(result[0]["details"]["expected"], "dash")
@@ -209,7 +209,7 @@ def test_md004_enforce_asterisk_style():
   | let raw_content = "* Item 1\n- Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "asterisk")
   | assert_eq(result[0]["details"]["found"], "dash")
@@ -225,7 +225,7 @@ def test_md004_enforce_plus_style():
   | let raw_content = "+ Item 1\n- Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md004(content, lines, config)
+  | let result = mq-lint::md004(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "plus")
   | assert_eq(result[0]["details"]["found"], "dash")
@@ -233,79 +233,79 @@ end
 
 # Test data for MD005 - List item indentation consistency
 def test_md005_consistent_indentation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n* Item 2\n* Item 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md005(content, lines, config)
+  | let result = mq-lint::md005(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md005_inconsistent_ul_ol_at_same_level():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n1. Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md005(content, lines, config)
+  | let result = mq-lint::md005(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD005")
 end
 
 def test_md005_nested_lists_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n  * Nested item\n* Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md005(content, lines, config)
+  | let result = mq-lint::md005(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD006 - Consider starting bulleted lists at the beginning of the line
 def test_md006_list_at_start():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n* Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md006(content, lines, config)
+  | let result = mq-lint::md006(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md006_list_with_indent():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "\n  * Item 1\n  * Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md006(content, lines, config)
+  | let result = mq-lint::md006(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD006")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md006_nested_list_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n  * Nested item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md006(content, lines, config)
+  | let result = mq-lint::md006(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD007 - Unordered list indentation
 def test_md007_correct_indentation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n  * Nested item\n    * Double nested\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md007(content, lines, config)
+  | let result = mq-lint::md007(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md007_incorrect_indentation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n   * Nested item (3 spaces)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md007(content, lines, config)
+  | let result = mq-lint::md007(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD007")
   | assert_eq(result[0]["severity"], "warning")
@@ -321,26 +321,26 @@ def test_md007_custom_indent():
   | let raw_content = "* Item 1\n    * Nested item (4 spaces)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md007(content, lines, config)
+  | let result = mq-lint::md007(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD009 - Trailing spaces
 def test_md009_no_trailing_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\nLine 2\nLine 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md009(content, lines, config)
+  | let result = mq-lint::md009(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md009_single_trailing_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1 \nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md009(content, lines, config)
+  | let result = mq-lint::md009(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD009")
   | assert_eq(result[0]["severity"], "warning")
@@ -348,21 +348,21 @@ def test_md009_single_trailing_space():
 end
 
 def test_md009_multiple_trailing_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1   \nLine 2    \n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md009(content, lines, config)
+  | let result = mq-lint::md009(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD009")
 end
 
 def test_md009_line_break_spaces_allowed():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1  \nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md009(content, lines, config)
+  | let result = mq-lint::md009(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -376,7 +376,7 @@ def test_md009_strict_mode():
   | let raw_content = "Line 1  \nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md009(content, lines, config)
+  | let result = mq-lint::md009(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD009")
 end
@@ -391,48 +391,48 @@ def test_md009_custom_br_spaces():
   | let raw_content = "Line 1   \nLine 2  \n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md009(content, lines, config)
+  | let result = mq-lint::md009(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["count"], 2)
 end
 
 # Test data for MD010 - Hard tabs
 def test_md010_no_tabs():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\nLine 2\nLine 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md010(content, lines, config)
+  | let result = mq-lint::md010(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md010_tabs_found():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\tWith Tab\nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md010(content, lines, config)
+  | let result = mq-lint::md010(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD010")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md010_multiple_tabs():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\tTab\nLine 2\tAnother Tab\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md010(content, lines, config)
+  | let result = mq-lint::md010(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD010")
 end
 
 def test_md010_tabs_in_code_block_allowed():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n```\n\tCode with tab\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md010(content, lines, config)
+  | let result = mq-lint::md010(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -446,85 +446,85 @@ def test_md010_tabs_in_code_block_strict():
   | let raw_content = "# Header\n```\n\tCode with tab\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md010(content, lines, config)
+  | let result = mq-lint::md010(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD010")
 end
 
 def test_md010_tabs_outside_code_block():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "\tTab before code\n```\n\tCode with tab\n```\n\tTab after code\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md010(content, lines, config)
+  | let result = mq-lint::md010(content, lines, config)
   | assert_eq(len(result), 2)
 end
 
 # Test data for MD011 - Reversed link syntax
 def test_md011_correct_link_syntax():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is a [link](https://example.com) in correct syntax.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md011(content, lines, config)
+  | let result = mq-lint::md011(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md011_reversed_link_syntax():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is a (https://example.com)[link] in reversed syntax.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md011(content, lines, config)
+  | let result = mq-lint::md011(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD011")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md011_multiple_correct_links():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Here are [link1](url1) and [link2](url2).\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md011(content, lines, config)
+  | let result = mq-lint::md011(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md011_multiple_reversed_links():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Here are (url1)[link1] and (url2)[link2].\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md011(content, lines, config)
+  | let result = mq-lint::md011(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md011_mixed_links():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Correct [link](url) and reversed (url)[link].\n"
-  | let content = mdlint::to_markdown(raw_content)
+  | let content = mq-lint::to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md011(content, lines, config)
+  | let result = mq-lint::md011(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD011")
 end
 
 # Test data for MD012 - Multiple consecutive blank lines
 def test_md012_single_blank_line():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\n\nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md012(content, lines, config)
+  | let result = mq-lint::md012(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md012_multiple_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\n\n\nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md012(content, lines, config)
+  | let result = mq-lint::md012(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD012")
   | assert_eq(result[0]["severity"], "error")
@@ -532,11 +532,11 @@ def test_md012_multiple_blank_lines():
 end
 
 def test_md012_three_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\n\n\n\nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md012(content, lines, config)
+  | let result = mq-lint::md012(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["count"], 3)
 end
@@ -551,7 +551,7 @@ def test_md012_custom_maximum():
   | let raw_content = "Line 1\n\n\nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md012(content, lines, config)
+  | let result = mq-lint::md012(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -565,36 +565,36 @@ def test_md012_custom_maximum_exceeded():
   | let raw_content = "Line 1\n\n\n\nLine 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md012(content, lines, config)
+  | let result = mq-lint::md012(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["count"], 3)
 end
 
 def test_md012_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Line 1\n\n\nLine 2\n\n\nLine 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md012(content, lines, config)
+  | let result = mq-lint::md012(content, lines, config)
   | assert_eq(len(result), 2)
 end
 
 # Test data for MD013 - Line length
 def test_md013_short_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Short line\nAnother short line\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md013_long_line():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is a very long line that exceeds the default maximum line length of 80 characters\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD013")
   | assert_eq(result[0]["severity"], "warning")
@@ -610,16 +610,16 @@ def test_md013_custom_line_length():
   | let raw_content = "This line is longer than 50 characters but shorter than 80\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md013_code_block_excluded():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n```\nThis is a very long line in a code block that exceeds the default maximum line length\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -633,7 +633,7 @@ def test_md013_code_block_included():
   | let raw_content = "# Header\n```\nThis is a very long line in a code block that exceeds the default maximum line length\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
@@ -647,340 +647,340 @@ def test_md013_heading_excluded():
   | let raw_content = "# This is a very long heading that exceeds the default maximum line length of 80 characters\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md013_table_excluded():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Column 1 | This is a very long column that exceeds the default maximum line length of 80 characters |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md013(content, lines, config)
+  | let result = mq-lint::md013(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD014 - Dollar signs in commands
 def test_md014_no_dollar_signs():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n```bash\nls -la\ncd /home\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md014(content, lines, config)
+  | let result = mq-lint::md014(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md014_dollar_sign_found():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n```bash\n$ ls -la\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md014(content, lines, config)
+  | let result = mq-lint::md014(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD014")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md014_multiple_dollar_signs():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n```bash\n$ ls -la\n$ cd /home\n$ pwd\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md014(content, lines, config)
+  | let result = mq-lint::md014(content, lines, config)
   | assert_eq(len(result), 3)
   | assert_eq(result[0]["rule"], "MD014")
 end
 
 def test_md014_no_code_block():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "$ This is not in a code block\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md014(content, lines, config)
+  | let result = mq-lint::md014(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md014_mixed_commands():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```bash\nls -la\n$ pwd\ncd /home\n$ echo test\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md014(content, lines, config)
+  | let result = mq-lint::md014(content, lines, config)
   | assert_eq(len(result), 2)
 end
 
 # Test data for MD018 - No space after hash
 def test_md018_proper_spacing():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md018(content, lines, config)
+  | let result = mq-lint::md018(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md018_no_space_after_hash():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#Header without space\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md018(content, lines, config)
+  | let result = mq-lint::md018(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD018")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md018_multiple_hashes_no_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "##Header\n###Another\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md018(content, lines, config)
+  | let result = mq-lint::md018(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD018")
 end
 
 def test_md018_mixed_headers():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Good Header\n##Bad Header\n### Another Good\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md018(content, lines, config)
+  | let result = mq-lint::md018(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md018_closed_atx_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header #\n## Header 2 ##\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md018(content, lines, config)
+  | let result = mq-lint::md018(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD019 - Multiple spaces after hash
 def test_md019_single_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md019(content, lines, config)
+  | let result = mq-lint::md019(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md019_multiple_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#  Header with two spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md019(content, lines, config)
+  | let result = mq-lint::md019(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD019")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md019_three_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "##   Header with three spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md019(content, lines, config)
+  | let result = mq-lint::md019(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD019")
 end
 
 def test_md019_mixed_headers():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Good Header\n##  Bad Header\n### Another Good\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md019(content, lines, config)
+  | let result = mq-lint::md019(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md019_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#  Header 1\n##  Header 2\n###  Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md019(content, lines, config)
+  | let result = mq-lint::md019(content, lines, config)
   | assert_eq(len(result), 3)
 end
 
 # Test data for MD020 - No space inside closing hashes
 def test_md020_proper_spacing():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header #\n## Header 2 ##\n### Header 3 ###\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md020(content, lines, config)
+  | let result = mq-lint::md020(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md020_no_space_after_opening():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#Header #\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md020(content, lines, config)
+  | let result = mq-lint::md020(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD020")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md020_no_space_before_closing():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header#\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md020(content, lines, config)
+  | let result = mq-lint::md020(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD020")
 end
 
 def test_md020_no_space_both_sides():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#Header#\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md020(content, lines, config)
+  | let result = mq-lint::md020(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md020_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#Header #\n## Header2##\n###Header 3###\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md020(content, lines, config)
+  | let result = mq-lint::md020(content, lines, config)
   | assert_eq(len(result), 3)
 end
 
 # Test data for MD021 - Multiple spaces inside closing hashes
 def test_md021_proper_spacing():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header #\n## Header 2 ##\n### Header 3 ###\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md021(content, lines, config)
+  | let result = mq-lint::md021(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md021_multiple_spaces_after_opening():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#  Header #\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md021(content, lines, config)
+  | let result = mq-lint::md021(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD021")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md021_multiple_spaces_before_closing():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header  #\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md021(content, lines, config)
+  | let result = mq-lint::md021(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD021")
 end
 
 def test_md021_multiple_spaces_both_sides():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#  Header  #\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md021(content, lines, config)
+  | let result = mq-lint::md021(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md021_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "#  Header #\n##  Header 2  ##\n###   Header 3 ###\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md021(content, lines, config)
+  | let result = mq-lint::md021(content, lines, config)
   | assert_eq(len(result), 3)
 end
 
 # Test data for MD022 - Headers should be surrounded by blank lines
 def test_md022_proper_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n\nSome text\n\n## Header 2\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md022_missing_blank_above():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n# Header\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD022")
   | assert_eq(result[0]["details"]["position"], "above")
 end
 
 def test_md022_missing_blank_below():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\nSome text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD022")
   | assert_eq(result[0]["details"]["position"], "below")
 end
 
 def test_md022_first_line_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\nSome text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md022_setext_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n\nHeader\n======\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md022_setext_missing_blank():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\nHeader\n======\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD022")
 end
 
 def test_md022_hash_in_code_block():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n\n```bash\n# This is a comment\necho hello\n```\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   # Should not detect # inside code block as heading
   | assert_eq(len(result), 0)
 end
 
 def test_md022_heading_outside_code_block():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n# Real Heading\n\n```bash\n# Comment in code\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md022(content, lines, config)
+  | let result = mq-lint::md022(content, lines, config)
   # Should detect only the real heading without blank line above
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD022")
@@ -989,66 +989,66 @@ end
 
 # Test data for MD023 - Headers must start at the beginning of the line
 def test_md023_no_indentation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header 1\n## Header 2\n### Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md023(content, lines, config)
+  | let result = mq-lint::md023(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md023_indented_atx_header():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = " # Indented Header\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md023(content, lines, config)
+  | let result = mq-lint::md023(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD023")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md023_tab_indented_header():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "\t# Tab Indented Header\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md023(content, lines, config)
+  | let result = mq-lint::md023(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD023")
 end
 
 def test_md023_indented_setext_header():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = " Header\n======\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md023(content, lines, config)
+  | let result = mq-lint::md023(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD023")
 end
 
 def test_md023_multiple_indented_headers():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = " # Header 1\n  ## Header 2\n   ### Header 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md023(content, lines, config)
+  | let result = mq-lint::md023(content, lines, config)
   | assert_eq(len(result), 3)
 end
 
 # Test data for MD024 - Multiple headers with the same content
 def test_md024_no_duplicate_headers():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header 1\n## Header 2\n### Header 3\n")
-  | let result = mdlint::md024(content, config)
+  | let result = mq-lint::md024(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md024_duplicate_headers():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Test\n## Test\n")
-  | let result = mdlint::md024(content, config)
+  | let result = mq-lint::md024(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD024")
   | assert_eq(result[0]["severity"], "warning")
@@ -1056,16 +1056,16 @@ end
 
 # Test data for MD025 - Multiple top level headers
 def test_md025_single_h1():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Only One H1\n## H2\n### H3\n")
-  | let result = mdlint::md025(content, config)
+  | let result = mq-lint::md025(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md025_multiple_h1():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# First H1\n## H2\n# Second H1\n")
-  | let result = mdlint::md025(content, config)
+  | let result = mq-lint::md025(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD025")
   | assert_eq(result[0]["severity"], "error")
@@ -1073,161 +1073,161 @@ end
 
 # Test data for MD026 - Trailing punctuation in header
 def test_md026_no_trailing_punctuation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Clean Header\n## Another Clean Header\n")
-  | let result = mdlint::md026(content, config)
+  | let result = mq-lint::md026(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md026_trailing_period():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header with period.\n")
-  | let result = mdlint::md026(content, config)
+  | let result = mq-lint::md026(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD026")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md026_trailing_question():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header with question?\n")
-  | let result = mdlint::md026(content, config)
+  | let result = mq-lint::md026(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD026")
 end
 
 # Test data for MD027 - Multiple spaces after blockquote symbol
 def test_md027_single_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> This is a blockquote\n> Another line\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md027_multiple_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = ">  Two spaces after symbol\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD027")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md027_three_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = ">   Three spaces after symbol\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD027")
 end
 
 def test_md027_mixed_blockquotes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Good blockquote\n>  Bad blockquote\n> Another good one\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md027_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = ">  Bad 1\n>  Bad 2\n>   Bad 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 3)
 end
 
 def test_md027_nested_blockquotes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Level 1\n>> Level 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md027_no_space_after_symbol():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = ">No space after symbol\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md027(content, lines, config)
+  | let result = mq-lint::md027(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD028 - Blank line inside blockquote
 def test_md028_no_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Quote line 1\n> Quote line 2\n> Quote line 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md028_blank_with_marker():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Quote line 1\n>\n> Quote line 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md028_blank_line_violation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Quote line 1\n\n> Quote line 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD028")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md028_text_between_blockquotes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Quote 1\n\nSome text\n\n> Quote 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md028_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Quote 1\n\n> Quote 2\n\n> Quote 3\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD028")
   | assert_eq(result[1]["rule"], "MD028")
 end
 
 def test_md028_single_blockquote():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> This is a single blockquote\n> with multiple lines\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md028_nested_blockquote():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "> Level 1\n>> Level 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md028(content, lines, config)
+  | let result = mq-lint::md028(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -1242,7 +1242,7 @@ def test_md029_one_style():
   | let raw_content = "1. First item\n1. Second item\n1. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -1256,7 +1256,7 @@ def test_md029_ordered_style():
   | let raw_content = "1. First item\n2. Second item\n3. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -1270,25 +1270,25 @@ def test_md029_zero_style():
   | let raw_content = "0. First item\n0. Second item\n0. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md029_one_or_ordered_accepts_one():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "1. First item\n1. Second item\n1. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md029_one_or_ordered_accepts_ordered():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "1. First item\n2. Second item\n3. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -1302,7 +1302,7 @@ def test_md029_one_style_violation():
   | let raw_content = "1. First item\n2. Second item\n3. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD029")
   | assert_eq(result[0]["severity"], "error")
@@ -1318,17 +1318,17 @@ def test_md029_ordered_style_violation():
   | let raw_content = "1. First item\n1. Second item\n1. Third item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD029")
 end
 
 def test_md029_skip_code_blocks():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "1. First item\n```\n2. Code example\n```\n2. Second item\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -1342,7 +1342,7 @@ def test_md029_wrong_sequence():
   | let raw_content = "1. First\n3. Third (skipped 2)\n4. Fourth\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md029(content, lines, config)
+  | let result = mq-lint::md029(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["details"]["expected"], 2)
   | assert_eq(result[0]["details"]["actual"], 3)
@@ -1350,20 +1350,20 @@ end
 
 # Test data for MD030 - Spaces after list markers
 def test_md030_default_single_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "- Item 1\n- Item 2\n1. Item 1\n2. Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md030_ul_two_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "-  Item with two spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD030")
   | assert_eq(result[0]["severity"], "error")
@@ -1372,11 +1372,11 @@ def test_md030_ul_two_spaces():
 end
 
 def test_md030_ol_three_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "1.   Item with three spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD030")
   | assert_eq(result[0]["details"]["expected"], 1)
@@ -1393,7 +1393,7 @@ def test_md030_custom_ul_spaces():
   | let raw_content = "-  Item with two spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -1407,53 +1407,53 @@ def test_md030_custom_ol_spaces():
   | let raw_content = "1.  Item with two spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md030_mixed_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "-  Two spaces\n*   Three spaces\n1.  Two spaces\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 3)
 end
 
 def test_md030_asterisk_marker():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "* Item 1\n* Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md030_plus_marker():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "+ Item 1\n+ Item 2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md030(content, lines, config)
+  | let result = mq-lint::md030(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD031 - Fenced code blocks should be surrounded by blank lines
 def test_md031_proper_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n```\ncode\n```\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md031_missing_blank_above():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n```\ncode\n```\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD031")
   | assert_eq(result[0]["severity"], "error")
@@ -1461,79 +1461,79 @@ def test_md031_missing_blank_above():
 end
 
 def test_md031_missing_blank_below():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n```\ncode\n```\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD031")
   | assert_eq(result[0]["details"]["position"], "below")
 end
 
 def test_md031_missing_both_blanks():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Header\n```\ncode\n```\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["details"]["position"], "above")
   | assert_eq(result[1]["details"]["position"], "below")
 end
 
 def test_md031_first_line_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```\ncode\n```\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md031_last_line_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n```\ncode\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md031_tilde_fence():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n~~~\ncode\n~~~\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md031_multiple_code_blocks():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n```\ncode1\n```\n\n```\ncode2\n```\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md031(content, lines, config)
+  | let result = mq-lint::md031(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD032 - Lists should be surrounded by blank lines
 def test_md032_proper_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n- Item 1\n- Item 2\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md032_missing_blank_above():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n- Item 1\n- Item 2\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD032")
   | assert_eq(result[0]["severity"], "error")
@@ -1541,136 +1541,136 @@ def test_md032_missing_blank_above():
 end
 
 def test_md032_missing_blank_below():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n- Item 1\n- Item 2\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD032")
   | assert_eq(result[0]["details"]["position"], "below")
 end
 
 def test_md032_missing_both_blanks():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Header\n- Item 1\n- Item 2\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["details"]["position"], "above")
   | assert_eq(result[1]["details"]["position"], "below")
 end
 
 def test_md032_first_line_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "- Item 1\n- Item 2\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md032_ordered_list():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n1. Item 1\n2. Item 2\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md032_mixed_lists():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n- Unordered\n\n1. Ordered\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md032_asterisk_list():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Header\n\n* Item 1\n* Item 2\n\nText\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md032(content, lines, config)
+  | let result = mq-lint::md032(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD034 - Bare URL used
 def test_md034_no_bare_url():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Check out <http://example.com> for more info.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md034(content, lines, config)
+  | let result = mq-lint::md034(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md034_bare_url_detected():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Check out http://example.com for more info.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md034(content, lines, config)
+  | let result = mq-lint::md034(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD034")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md034_link_syntax_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Example](http://example.com) is great.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md034(content, lines, config)
+  | let result = mq-lint::md034(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md034_https_bare_url():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Visit https://example.com today.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md034(content, lines, config)
+  | let result = mq-lint::md034(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md034_in_code_block():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```\nhttp://example.com\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md034(content, lines, config)
+  | let result = mq-lint::md034(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md034_inline_code():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Use `http://example.com` in your code.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md034(content, lines, config)
+  | let result = mq-lint::md034(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD035 - Horizontal rule style
 def test_md035_consistent_dashes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "---\n\nText\n\n---\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md035(content, lines, config)
+  | let result = mq-lint::md035(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md035_inconsistent_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "---\n\nText\n\n***\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md035(content, lines, config)
+  | let result = mq-lint::md035(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD035")
   | assert_eq(result[0]["severity"], "warning")
@@ -1686,7 +1686,7 @@ def test_md035_enforce_dash_style():
   | let raw_content = "***\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md035(content, lines, config)
+  | let result = mq-lint::md035(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "---")
 end
@@ -1701,226 +1701,226 @@ def test_md035_enforce_asterisk_style():
   | let raw_content = "---\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md035(content, lines, config)
+  | let result = mq-lint::md035(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "***")
 end
 
 def test_md035_underscore_style():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "___\n\nText\n\n___\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md035(content, lines, config)
+  | let result = mq-lint::md035(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md035_longer_hr():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "-----\n\nText\n\n-----\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md035(content, lines, config)
+  | let result = mq-lint::md035(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD036 - Emphasis used instead of a heading
 def test_md036_bold_as_heading():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "**Section Title**\n\nSome text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md036(content, lines, config)
+  | let result = mq-lint::md036(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD036")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md036_italic_as_heading():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "*Section Title*\n\nSome text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md036(content, lines, config)
+  | let result = mq-lint::md036(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md036_emphasis_with_punctuation():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "**Important note.**\n\nSome text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md036(content, lines, config)
+  | let result = mq-lint::md036(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md036_underscore_bold():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "__Section Title__\n\nSome text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md036(content, lines, config)
+  | let result = mq-lint::md036(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md036_inline_emphasis():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is **bold** text in a paragraph.\n\ntest"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md036(content, lines, config)
+  | let result = mq-lint::md036(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD037 - Spaces inside emphasis markers
 def test_md037_no_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is **bold** text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md037(content, lines, config)
+  | let result = mq-lint::md037(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md037_spaces_in_bold():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is ** bold ** text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md037(content, lines, config)
+  | let result = mq-lint::md037(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD037")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md037_spaces_in_italic():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is * italic * text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md037(content, lines, config)
+  | let result = mq-lint::md037(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md037_spaces_in_underscore_bold():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is __ bold __ text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md037(content, lines, config)
+  | let result = mq-lint::md037(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md037_spaces_in_underscore_italic():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is _ italic _ text.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md037(content, lines, config)
+  | let result = mq-lint::md037(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 def test_md037_multiple_violations():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This has ** bold ** and * italic * issues.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md037(content, lines, config)
+  | let result = mq-lint::md037(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 # Test data for MD038 - Spaces inside code span elements
 def test_md038_no_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is `code` without spaces.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md038(content, lines, config)
+  | let result = mq-lint::md038(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md038_leading_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is ` code` with leading space.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md038(content, lines, config)
+  | let result = mq-lint::md038(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD038")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md038_trailing_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is `code ` with trailing space.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md038(content, lines, config)
+  | let result = mq-lint::md038(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD038")
 end
 
 def test_md038_both_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is ` code ` with both spaces.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md038(content, lines, config)
+  | let result = mq-lint::md038(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 # Test data for MD039 - Spaces inside link text
 def test_md039_no_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is [link](url) without spaces.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md039(content, lines, config)
+  | let result = mq-lint::md039(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md039_leading_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is [ link](url) with leading space.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md039(content, lines, config)
+  | let result = mq-lint::md039(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD039")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md039_trailing_space():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is [link ](url) with trailing space.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md039(content, lines, config)
+  | let result = mq-lint::md039(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD039")
 end
 
 def test_md039_both_spaces():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is [ link ](url) with both spaces.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md039(content, lines, config)
+  | let result = mq-lint::md039(content, lines, config)
   | assert_eq(len(result), 1)
 end
 
 # Test data for MD033 - Inline HTML
 def test_md033_no_html():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header\n\nJust plain text.\n")
-  | let result = mdlint::md033(content, config)
+  | let result = mq-lint::md033(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md033_inline_html():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header\n\n<div>Some HTML</div>\n")
-  | let result = mdlint::md033(content, config)
+  | let result = mq-lint::md033(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD033")
   | assert_eq(result[0]["severity"], "warning")
@@ -1928,16 +1928,16 @@ end
 
 # Test data for MD040 - Fenced code blocks should have a language
 def test_md040_code_with_language():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header\n\n```javascript\nconsole.log('test');\n```\n")
-  | let result = mdlint::md040(content, config)
+  | let result = mq-lint::md040(content, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md040_code_without_language():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let content = to_markdown("# Header\n\n```\ncode without language\n```\n")
-  | let result = mdlint::md040(content, config)
+  | let result = mq-lint::md040(content, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD040")
   | assert_eq(result[0]["severity"], "warning")
@@ -1945,60 +1945,60 @@ end
 
 # Test data for MD041 - First line should be a top-level heading
 def test_md041_correct_first_line():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Title\n\nContent here.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md041(content, lines, config)
+  | let result = mq-lint::md041(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md041_missing_h1():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "## Subtitle\n\nContent here.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md041(content, lines, config)
+  | let result = mq-lint::md041(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD041")
   | assert_eq(result[0]["severity"], "error")
 end
 
 def test_md041_text_before_heading():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n\n# Title\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md041(content, lines, config)
+  | let result = mq-lint::md041(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD041")
 end
 
 def test_md041_blank_lines_ok():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "\n\n# Title\n\nContent.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md041(content, lines, config)
+  | let result = mq-lint::md041(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD046 - Code block style
 def test_md046_consistent_fenced():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```\ncode1\n```\n\n```\ncode2\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md046(content, lines, config)
+  | let result = mq-lint::md046(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md046_inconsistent_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```\ncode1\n```\n\n    code2\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md046(content, lines, config)
+  | let result = mq-lint::md046(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD046")
   | assert_eq(result[0]["severity"], "error")
@@ -2014,27 +2014,27 @@ def test_md046_enforce_fenced():
   | let raw_content = "    indented code\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md046(content, lines, config)
+  | let result = mq-lint::md046(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "fenced")
 end
 
 # Test data for MD047 - File should end with newline
 def test_md047_ends_with_newline():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Title\n\nContent.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md047(content, lines, config)
+  | let result = mq-lint::md047(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md047_missing_newline():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Title\n\nContent."
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md047(content, lines, config)
+  | let result = mq-lint::md047(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD047")
   | assert_eq(result[0]["severity"], "error")
@@ -2042,29 +2042,29 @@ end
 
 # Test data for MD048 - Code fence style
 def test_md048_consistent_backticks():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```\ncode1\n```\n\n```\ncode2\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md048(content, lines, config)
+  | let result = mq-lint::md048(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md048_consistent_tildes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "~~~\ncode1\n~~~\n\n~~~\ncode2\n~~~\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md048(content, lines, config)
+  | let result = mq-lint::md048(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md048_mixed_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "```\ncode1\n```\n\n~~~\ncode2\n~~~\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md048(content, lines, config)
+  | let result = mq-lint::md048(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["rule"], "MD048")
   | assert_eq(result[0]["severity"], "error")
@@ -2080,36 +2080,36 @@ def test_md048_enforce_backtick():
   | let raw_content = "~~~\ncode\n~~~\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md048(content, lines, config)
+  | let result = mq-lint::md048(content, lines, config)
   | assert_eq(len(result), 2)
   | assert_eq(result[0]["details"]["expected"], "backtick")
 end
 
 # Test data for MD049 - Emphasis style
 def test_md049_consistent_asterisk():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is *emphasized* and *another* emphasis.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md049(content, lines, config)
+  | let result = mq-lint::md049(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md049_consistent_underscore():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is _emphasized_ and _another_ emphasis.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md049(content, lines, config)
+  | let result = mq-lint::md049(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md049_mixed_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is *emphasized* and _another_ emphasis.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md049(content, lines, config)
+  | let result = mq-lint::md049(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD049")
   | assert_eq(result[0]["severity"], "error")
@@ -2125,36 +2125,36 @@ def test_md049_enforce_asterisk():
   | let raw_content = "This is _emphasized_.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md049(content, lines, config)
+  | let result = mq-lint::md049(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "asterisk")
 end
 
 # Test data for MD050 - Strong style
 def test_md050_consistent_asterisk():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is **strong** and **another** strong.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md050(content, lines, config)
+  | let result = mq-lint::md050(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md050_consistent_underscore():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is __strong__ and __another__ strong.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md050(content, lines, config)
+  | let result = mq-lint::md050(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md050_mixed_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is **strong** and __another__ strong.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md050(content, lines, config)
+  | let result = mq-lint::md050(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD050")
   | assert_eq(result[0]["severity"], "error")
@@ -2170,102 +2170,102 @@ def test_md050_enforce_underscore():
   | let raw_content = "This is **strong**.\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md050(content, lines, config)
+  | let result = mq-lint::md050(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "underscore")
 end
 
 def test_md050_ignore_code_block():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "This is **strong**.\n\n```\nThis is **code** block.\n```\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md050(content, lines, config)
+  | let result = mq-lint::md050(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD051 - Link fragments should be valid
 def test_md051_valid_fragment():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Heading\n\n[Link](#heading)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md051(content, lines, config)
+  | let result = mq-lint::md051(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md051_no_fragments():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "# Heading\n\n[Link](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md051(content, lines, config)
+  | let result = mq-lint::md051(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD052 - Reference links should use defined labels
 def test_md052_defined_reference():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link text][label]\n\n[label]: https://example.com\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md052(content, lines, config)
+  | let result = mq-lint::md052(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md052_no_reference_links():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md052(content, lines, config)
+  | let result = mq-lint::md052(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD053 - Reference definitions should be needed
 def test_md053_used_definition():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link][label]\n\n[label]: https://example.com\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md053(content, lines, config)
+  | let result = mq-lint::md053(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md053_no_definitions():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md053(content, lines, config)
+  | let result = mq-lint::md053(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD054 - Link and image style
 def test_md054_consistent_inline():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link1](url1) and [Link2](url2)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md054(content, lines, config)
+  | let result = mq-lint::md054(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md054_consistent_reference():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link1][ref1] and [Link2][ref2]\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md054(content, lines, config)
+  | let result = mq-lint::md054(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md054_mixed_styles():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Link1](url1) and [Link2][ref2]\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md054(content, lines, config)
+  | let result = mq-lint::md054(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD054")
   | assert_eq(result[0]["severity"], "error")
@@ -2281,57 +2281,57 @@ def test_md054_enforce_inline():
   | let raw_content = "[Link][ref]\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md054(content, lines, config)
+  | let result = mq-lint::md054(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["details"]["expected"], "inline")
 end
 
 # Test data for MD055 - Table pipe style
 def test_md055_consistent_leading_and_trailing():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md055(content, lines, config)
+  | let result = mq-lint::md055(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md055_inconsistent_pipes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\nA    | B    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md055(content, lines, config)
+  | let result = mq-lint::md055(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD055")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md055_no_outer_pipes():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Col1 | Col2\n---- | ----\nA    | B\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md055(content, lines, config)
+  | let result = mq-lint::md055(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD056 - Table column count
 def test_md056_consistent_columns():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n| C    | D    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md056(content, lines, config)
+  | let result = mq-lint::md056(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md056_inconsistent_columns():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n| C    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md056(content, lines, config)
+  | let result = mq-lint::md056(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD056")
   | assert_eq(result[0]["severity"], "error")
@@ -2347,26 +2347,26 @@ def test_md056_disabled():
   | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md056(content, lines, config)
+  | let result = mq-lint::md056(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD058 - Tables should be surrounded by blank lines
 def test_md058_table_with_blank_lines():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n\n| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md058_table_without_blank_line_above():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD058")
   | assert_eq(result[0]["severity"], "error")
@@ -2374,11 +2374,11 @@ def test_md058_table_without_blank_line_above():
 end
 
 def test_md058_table_without_blank_line_below():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n\n| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD058")
   | assert_eq(result[0]["severity"], "error")
@@ -2395,77 +2395,77 @@ def test_md058_disabled():
   | let raw_content = "Some text\n| Col1 | Col2 |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md058_pipe_in_text_not_table():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\nChoose A | B for the option\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   # Should not detect this as a table since there's no separator line
   | assert_eq(len(result), 0)
 end
 
 def test_md058_incomplete_table_without_separator():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n| Col1 | Col2 |\n| A    | B    |\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   # Should not detect this as a table since there's no separator line
   | assert_eq(len(result), 0)
 end
 
 def test_md058_valid_table_formats():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "Some text\n\n| Col1 | Col2 |\n|------|------|\n| A    | B    |\n\nMore text\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md058(content, lines, config)
+  | let result = mq-lint::md058(content, lines, config)
   # Valid table with proper formatting should pass
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD059 - Link text should be descriptive
 def test_md059_descriptive_link():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[Learn more about our services](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md059(content, lines, config)
+  | let result = mq-lint::md059(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md059_click_here_link():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[click here](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md059(content, lines, config)
+  | let result = mq-lint::md059(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD059")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md059_here_link():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[here](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md059(content, lines, config)
+  | let result = mq-lint::md059(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD059")
 end
 
 def test_md059_link_link():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "[link](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md059(content, lines, config)
+  | let result = mq-lint::md059(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD059")
 end
@@ -2480,46 +2480,46 @@ def test_md059_disabled():
   | let raw_content = "[click here](https://example.com)\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md059(content, lines, config)
+  | let result = mq-lint::md059(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 # Test data for MD060 - Table column style
 def test_md060_consistent_left_alignment():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| :--- | :--- |\n| A    | B    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md060(content, lines, config)
+  | let result = mq-lint::md060(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md060_consistent_center_alignment():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| :--: | :--: |\n| A    | B    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md060(content, lines, config)
+  | let result = mq-lint::md060(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
 def test_md060_inconsistent_alignment():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| :--- | :--: |\n| A    | B    |\n\n| Col3 | Col4 |\n| ---: | ---- |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md060(content, lines, config)
+  | let result = mq-lint::md060(content, lines, config)
   | assert_eq(len(result), 1)
   | assert_eq(result[0]["rule"], "MD060")
   | assert_eq(result[0]["severity"], "warning")
 end
 
 def test_md060_no_alignment():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | let raw_content = "| Col1 | Col2 |\n| ---- | ---- |\n| A    | B    |\n"
   | let content = to_markdown(raw_content)
   | let lines = split(raw_content, "\n")
-  | let result = mdlint::md060(content, lines, config)
+  | let result = mq-lint::md060(content, lines, config)
   | assert_eq(len(result), 0)
 end
 
@@ -2532,7 +2532,7 @@ def test_format_issue():
     message: "Test message",
     line: 5
   }
-  | let formatted = mdlint::format_issue(issue)
+  | let formatted = mq-lint::format_issue(issue)
   | assert_eq(contains(formatted, "MD001"), true)
   | assert_eq(contains(formatted, "heading-increment"), true)
   | assert_eq(contains(formatted, "Test message"), true)
@@ -2545,7 +2545,7 @@ def test_count_by_severity():
     {severity: "warning"},
     {severity: "info"}
   ]
-  | let counts = mdlint::count_by_severity(issues)
+  | let counts = mq-lint::count_by_severity(issues)
   | assert_eq(counts["errors"], 2)
   | assert_eq(counts["warnings"], 1)
   | assert_eq(counts["info"], 1)
@@ -2555,13 +2555,13 @@ end
 # Integration test with lint_all
 def test_lint_all_clean_document():
   let content = "# Title\n\n## Section\n\nContent here.\n"
-  | let result = mdlint::lint_all(content)
+  | let result = mq-lint::lint_all(content)
   | assert_eq(result["summary"]["errors"], 0)
 end
 
 def test_lint_all_with_issues():
   let content = "## Not H1\n\n### Skipped Level\n\n# Duplicate\n\n# Duplicate\n"
-  | let result = mdlint::lint_all(content)
+  | let result = mq-lint::lint_all(content)
   | let total = result["summary"]["total"]
   | assert_eq(total > 0, true)
 end
@@ -2572,7 +2572,7 @@ def test_generate_report_no_issues():
     issues: [],
     summary: {errors: 0, warnings: 0, info: 0, total: 0}
   }
-  | let report = mdlint::generate_report(lint_result)
+  | let report = mq-lint::generate_report(lint_result)
   | assert_eq(contains(report, "No issues found"), true)
 end
 
@@ -2588,32 +2588,32 @@ def test_generate_report_with_issues():
     issues: [issue],
     summary: {errors: 1, warnings: 0, info: 0, total: 1}
   }
-  | let report = mdlint::generate_report(lint_result)
+  | let report = mq-lint::generate_report(lint_result)
   | assert_eq(contains(report, "Markdown Lint Report"), true)
   | assert_eq(contains(report, "Found 1 issues"), true)
 end
 
 # Test configuration functions
 def test_default_config():
-  let config = mdlint::default_config()
+  let config = mq-lint::default_config()
   | assert_eq(contains(config["lint"]["rules"], "MD001"), true)
   | assert_eq(contains(config["lint"]["rules"], "MD002"), true)
   | assert_eq(config["lint"]["md002"]["level"], 1)
 end
 
 def test_is_rule_enabled():
-  let config = mdlint::default_config()
-  | assert_eq(mdlint::is_rule_enabled(config, "MD001"), true)
-  | assert_eq(mdlint::is_rule_enabled(config, "MD002"), true)
-  | assert_eq(mdlint::is_rule_enabled(config, "MD003"), true)
-  | assert_eq(mdlint::is_rule_enabled(config, "MD004"), true)
+  let config = mq-lint::default_config()
+  | assert_eq(mq-lint::is_rule_enabled(config, "MD001"), true)
+  | assert_eq(mq-lint::is_rule_enabled(config, "MD002"), true)
+  | assert_eq(mq-lint::is_rule_enabled(config, "MD003"), true)
+  | assert_eq(mq-lint::is_rule_enabled(config, "MD004"), true)
 end
 
 def test_get_rule_config():
-  let config = mdlint::default_config()
-  | let md002_config = mdlint::get_rule_config(config, "md002")
+  let config = mq-lint::default_config()
+  | let md002_config = mq-lint::get_rule_config(config, "md002")
   | assert_eq(md002_config["level"], 1)
-  | let md026_config = mdlint::get_rule_config(config, "md026")
+  | let md026_config = mq-lint::get_rule_config(config, "md026")
   | assert_eq(md026_config["punctuation"], ".,;:!?")
 end
 
@@ -2625,10 +2625,10 @@ def test_custom_config_md026():
     }
   }
   | let content = to_markdown("# Header with comma,\n")
-  | let result = mdlint::md026(content, config)
+  | let result = mq-lint::md026(content, config)
   | assert_eq(len(result), 0)
   | let content2 = to_markdown("# Header with period.\n")
-  | let result2 = mdlint::md026(content2, config)
+  | let result2 = mq-lint::md026(content2, config)
   | assert_eq(len(result2), 1)
 end
 
@@ -2645,7 +2645,7 @@ def test_lint_all_with_disabled_rules():
     }
   }
   | let content = "## Not H1\n\n### Skipped Level\n"
-  | let result = mdlint::lint_all_with_config(content, config)
+  | let result = mq-lint::lint_all_with_config(content, config)
   | let total = result["summary"]["total"]
   | assert_eq(total, 1)
 end
